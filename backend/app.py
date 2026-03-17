@@ -19,11 +19,7 @@ def create_app():
     app.config["SECRET_KEY"] = SECRET_KEY
 
     # Allow frontend requests (Vercel)
-    CORS(
-        app,
-        resources={r"/*": {"origins": "*"}},
-        supports_credentials=True
-    )
+    CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
 
     # Health check endpoint
     @app.route("/api/health", methods=["GET"])
@@ -48,7 +44,9 @@ app = create_app()
 socketio = SocketIO(
     app,
     cors_allowed_origins="*",
-    async_mode="eventlet"
+    async_mode="eventlet",
+    logger=True,
+    engineio_logger=True
 )
 
 # Initialize database
