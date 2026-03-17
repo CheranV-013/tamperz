@@ -38,5 +38,8 @@ simulator = SensorSimulator(anomaly_service, socketio, interval=3)
 socketio.start_background_task(simulator.run)
 
 
+import os
+
 if __name__ == "__main__":
-    socketio.run(app, host="0.0.0.0", port=PORT)
+    port = int(os.environ.get("PORT", 5000))  # Render provides PORT automatically
+    socketio.run(app, host="0.0.0.0", port=port)
