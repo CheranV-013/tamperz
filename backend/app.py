@@ -136,7 +136,13 @@ app.register_blueprint(alert_bp)
 simulator = SensorSimulator(anomaly_service, socketio, interval=3)
 import threading
 
-threading.Thread(target=simulator.run, daemon=True).start()
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5000))
+
+    # 🔥 START SIMULATOR HERE (IMPORTANT)
+    threading.Thread(target=simulator.run, daemon=True).start()
+
+    socketio.run(app, host="0.0.0.0", port=port)
 
 
 # =========================
