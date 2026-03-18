@@ -41,28 +41,30 @@ const Dashboard = () => {
     });
 
     socket.on("sensor_update", (payload) => {
-      setSensorData((prev) => {
-        const anomalyFlag =
-          payload.door_status === 1 ||
-          payload.vibration > 0.6 ||
-          payload.gps_shift > 0.6 ||
-          payload.battery_voltage < 3.2 ||
-          payload.temperature > 40 ||
-          payload.temperature < 10;
-        const next = [
-          ...prev,
-          {
-            timestamp: formatTime(payload.timestamp),
-            temperature: payload.temperature,
-            humidity: payload.humidity,
-            vibration: payload.vibration,
-            anomaly: anomalyFlag ? payload.vibration : null,
-          },
-        ];
-        return next.slice(-30);
-      });
-    });
+  setSensorData((prev) => {
+    const anomalyFlag =
+      payload.door_status === 1 ||
+      payload.vibration > 0.6 ||
+      payload.gps_shift > 0.6 ||
+      payload.battery_voltage < 3.2 ||
+      payload.temperature > 40 ||
+      payload.temperature < 10;
 
+    const next = [
+      ...prev,
+      {
+        container_id: payload.container_id, // 🔥 ADD THIS
+        timestamp: formatTime(payload.timestamp),
+        temperature: payload.temperature,
+        humidity: payload.humidity,
+        vibration: payload.vibration,
+        anomaly: anomalyFlag ? payload.vibration : null,
+      },
+    ];
+
+    return next.slice(-50);
+  });
+});
     return () => {
       socket.off("connect");
       socket.off("disconnect");
@@ -72,26 +74,24 @@ const Dashboard = () => {
   }, []);
 
   const containerCards = useMemo(() => {
-    const latest = sensorData[sensorData.length - 1];
-    const base = ["C101", "C102", "C103"].map((id) => ({
+  const ids = ["C101", "C102", "C103"];
+
+  return ids.map((id) => {
+    const latest = [...sensorData]
+      .reverse()
+      .find((item) => item.container_id === id);
+
+    return {
       id,
-      status: "normal",
+      status: alerts.length > 0 && id === "C101" ? "critical" : "normal",
       lastUpdate: latest ? latest.timestamp : "--",
       temperature: latest ? latest.temperature.toFixed(1) : "--",
       humidity: latest ? Math.round(latest.humidity) : "--",
       vibration: latest ? latest.vibration.toFixed(2) : "--",
       battery: latest ? "3.9" : "--",
-    }));
-
-    if (alerts.length > 0) {
-      base[0] = {
-        ...base[0],
-        status: "critical",
-      };
-    }
-
-    return base;
-  }, [sensorData, alerts]);
+    };
+  });
+}, [sensorData, alerts]);
 
   return (
     <div className="min-h-screen bg-slate-50 px-6 pb-10">
