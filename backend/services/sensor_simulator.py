@@ -47,11 +47,11 @@ class SensorSimulator:
             if self.socketio:
                 print("🚀 Sending data:", payload)  # debug log
 
+                # ✅ FIXED (removed broadcast)
                 self.socketio.emit(
-                "sensor_update",
-                payload,
-                namespace="/",
-                broadcast=True
-            )
+                    "sensor_update",
+                    payload,
+                    namespace="/"
+                )
 
             eventlet.sleep(self.interval)
