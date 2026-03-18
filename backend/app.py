@@ -134,7 +134,9 @@ app.register_blueprint(alert_bp)
 # =========================
 
 simulator = SensorSimulator(anomaly_service, socketio, interval=3)
-socketio.start_background_task(simulator.run)
+import threading
+
+threading.Thread(target=simulator.run, daemon=True).start()
 
 
 # =========================

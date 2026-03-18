@@ -45,6 +45,13 @@ class SensorSimulator:
             self.anomaly_service.process_sensor_data(payload, source="simulator")
 
             if self.socketio:
-                self.socketio.emit("sensor_update", payload)
+                print("🚀 Sending data:", payload)  # debug log
+
+                self.socketio.emit(
+                "sensor_update",
+                payload,
+                namespace="/",
+                broadcast=True
+            )
 
             eventlet.sleep(self.interval)

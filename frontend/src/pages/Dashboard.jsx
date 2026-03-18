@@ -41,6 +41,7 @@ const Dashboard = () => {
     });
 
     socket.on("sensor_update", (payload) => {
+      console.log("DATA:", payload);
   setSensorData((prev) => {
     const anomalyFlag =
       payload.door_status === 1 ||
