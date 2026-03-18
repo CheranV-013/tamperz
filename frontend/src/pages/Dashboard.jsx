@@ -108,3 +108,28 @@ import socket from "../api/socketClient.js";const Dashboard = () => {
     </div>
   );
 };
+
+socket.on("connect", () => {
+  console.log("✅ CONNECTED:", socket.id);
+});
+
+
+useEffect(() => {
+  socket.on("connect", () => {
+    console.log("✅ CONNECTED:", socket.id);
+  });
+
+  socket.on("sensor_update", (data) => {
+    console.log("🔥 RECEIVED:", data);
+  });
+
+  socket.on("tamper_alert", (data) => {
+    console.log("🚨 ALERT:", data);
+  });
+
+  return () => {
+    socket.off("connect");
+    socket.off("sensor_update");
+    socket.off("tamper_alert");
+  };
+}, []);
