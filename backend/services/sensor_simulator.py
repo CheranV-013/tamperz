@@ -42,13 +42,15 @@ class SensorSimulator:
             payload = self._generate_payload()
             payload["timestamp"] = datetime.utcnow().isoformat()
 
+            # 🔥 keep your original logic
             self.anomaly_service.process_sensor_data(payload, source="simulator")
 
             if self.socketio:
-                print("🚀 Sending data:", payload)  # debug log
+                print("🚀 Sending data:", payload)
 
-                # ✅ FIXED (removed broadcast)
-                self.socketio.emit(
+                # ✅ SAFE EMIT (important for Render + eventlet)
+                self.socketio.start_background_task(
+                    self.socketio.emit,
                     "sensor_update",
                     payload,
                     namespace="/"
