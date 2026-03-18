@@ -7,7 +7,16 @@ import AlertPanel from "../components/AlertPanel.jsx";
 import SensorCharts from "../components/SensorCharts.jsx";
 
 import apiClient from "../api/apiClient.js";
-import socket from "../api/socketClient.js";const Dashboard = () => {
+import socket from "../api/socketClient.js";
+
+// ✅ ADD THIS (missing function)
+const formatTime = (iso) => {
+  if (!iso) return "--";
+  const date = new Date(iso);
+  return date.toLocaleTimeString();
+};
+
+const Dashboard = () => {
   const [alerts, setAlerts] = useState([]);
   const [sensorData, setSensorData] = useState([]);
   const [connected, setConnected] = useState(false);
@@ -27,10 +36,15 @@ import socket from "../api/socketClient.js";const Dashboard = () => {
   }, []);
 
   useEffect(() => {
-    socket.on("connect", () => setConnected(true));
+    socket.on("connect", () => {
+      console.log("✅ CONNECTED:", socket.id);
+      setConnected(true);
+    });
+
     socket.on("disconnect", () => setConnected(false));
 
     socket.on("tamper_alert", (alert) => {
+      console.log("🚨 ALERT:", alert);
       setAlerts((prev) => [alert, ...prev].slice(0, 50));
     });
 
@@ -62,7 +76,6 @@ import socket from "../api/socketClient.js";const Dashboard = () => {
       });
     });
 
-    // ✅ CLEANUP MUST BE HERE (outside socket.on)
     return () => {
       socket.off("connect");
       socket.off("disconnect");
@@ -109,27 +122,4 @@ import socket from "../api/socketClient.js";const Dashboard = () => {
   );
 };
 
-socket.on("connect", () => {
-  console.log("✅ CONNECTED:", socket.id);
-});
-
-
-useEffect(() => {
-  socket.on("connect", () => {
-    console.log("✅ CONNECTED:", socket.id);
-  });
-
-  socket.on("sensor_update", (data) => {
-    console.log("🔥 RECEIVED:", data);
-  });
-
-  socket.on("tamper_alert", (data) => {
-    console.log("🚨 ALERT:", data);
-  });
-
-  return () => {
-    socket.off("connect");
-    socket.off("sensor_update");
-    socket.off("tamper_alert");
-  };
-}, []);
+export default Dashboard;
