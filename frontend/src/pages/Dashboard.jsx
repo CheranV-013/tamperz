@@ -41,6 +41,10 @@ const Dashboard = () => {
       setConnected(true);
     });
 
+    socket.onAny((event, ...args) => {
+  console.log("📡 EVENT:", event, args);
+});
+
     socket.on("disconnect", () => setConnected(false));
 
     socket.on("tamper_alert", (alert) => {

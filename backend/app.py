@@ -134,7 +134,7 @@ def start_simulator():
 
 
 # ✅ START SIMULATOR (WORKS WITH RENDER / GUNICORN)
-threading.Thread(target=start_simulator, daemon=True).start()
+socketio.start_background_task(simulator.run)
 
 
 # =========================
