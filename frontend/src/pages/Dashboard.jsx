@@ -1,19 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
+
 import Navbar from "../components/Navbar.jsx";
 import SOCHeader from "../components/SOCHeader.jsx";
 import ContainerStatus from "../components/ContainerStatus.jsx";
 import AlertPanel from "../components/AlertPanel.jsx";
 import SensorCharts from "../components/SensorCharts.jsx";
+
 import apiClient from "../api/apiClient.js";
-import socket from "../api/socketClient.js";
-
-const formatTime = (iso) => {
-  if (!iso) return "--";
-  const date = new Date(iso);
-  return date.toLocaleTimeString();
-};
-
-const Dashboard = () => {
+import socket from "../api/socketClient.js";const Dashboard = () => {
   const [alerts, setAlerts] = useState([]);
   const [sensorData, setSensorData] = useState([]);
   const [connected, setConnected] = useState(false);
@@ -41,31 +35,34 @@ const Dashboard = () => {
     });
 
     socket.on("sensor_update", (payload) => {
-      console.log("DATA:", payload);
-  setSensorData((prev) => {
-    const anomalyFlag =
-      payload.door_status === 1 ||
-      payload.vibration > 0.6 ||
-      payload.gps_shift > 0.6 ||
-      payload.battery_voltage < 3.2 ||
-      payload.temperature > 40 ||
-      payload.temperature < 10;
+      console.log("🔥 DATA:", payload);
 
-    const next = [
-      ...prev,
-      {
-        container_id: payload.container_id, // 🔥 ADD THIS
-        timestamp: formatTime(payload.timestamp),
-        temperature: payload.temperature,
-        humidity: payload.humidity,
-        vibration: payload.vibration,
-        anomaly: anomalyFlag ? payload.vibration : null,
-      },
-    ];
+      setSensorData((prev) => {
+        const anomalyFlag =
+          payload.door_status === 1 ||
+          payload.vibration > 0.6 ||
+          payload.gps_shift > 0.6 ||
+          payload.battery_voltage < 3.2 ||
+          payload.temperature > 40 ||
+          payload.temperature < 10;
 
-    return next.slice(-50);
-  });
-});
+        const next = [
+          ...prev,
+          {
+            container_id: payload.container_id,
+            timestamp: formatTime(payload.timestamp),
+            temperature: payload.temperature,
+            humidity: payload.humidity,
+            vibration: payload.vibration,
+            anomaly: anomalyFlag ? payload.vibration : null,
+          },
+        ];
+
+        return next.slice(-50);
+      });
+    });
+
+    // ✅ CLEANUP MUST BE HERE (outside socket.on)
     return () => {
       socket.off("connect");
       socket.off("disconnect");
@@ -75,24 +72,24 @@ const Dashboard = () => {
   }, []);
 
   const containerCards = useMemo(() => {
-  const ids = ["C101", "C102", "C103"];
+    const ids = ["C101", "C102", "C103"];
 
-  return ids.map((id) => {
-    const latest = [...sensorData]
-      .reverse()
-      .find((item) => item.container_id === id);
+    return ids.map((id) => {
+      const latest = [...sensorData]
+        .reverse()
+        .find((item) => item.container_id === id);
 
-    return {
-      id,
-      status: alerts.length > 0 && id === "C101" ? "critical" : "normal",
-      lastUpdate: latest ? latest.timestamp : "--",
-      temperature: latest ? latest.temperature.toFixed(1) : "--",
-      humidity: latest ? Math.round(latest.humidity) : "--",
-      vibration: latest ? latest.vibration.toFixed(2) : "--",
-      battery: latest ? "3.9" : "--",
-    };
-  });
-}, [sensorData, alerts]);
+      return {
+        id,
+        status: alerts.length > 0 && id === "C101" ? "critical" : "normal",
+        lastUpdate: latest ? latest.timestamp : "--",
+        temperature: latest ? latest.temperature.toFixed(1) : "--",
+        humidity: latest ? Math.round(latest.humidity) : "--",
+        vibration: latest ? latest.vibration.toFixed(2) : "--",
+        battery: latest ? "3.9" : "--",
+      };
+    });
+  }, [sensorData, alerts]);
 
   return (
     <div className="min-h-screen bg-slate-50 px-6 pb-10">
@@ -111,5 +108,3 @@ const Dashboard = () => {
     </div>
   );
 };
-
-export default Dashboard;
