@@ -2,7 +2,7 @@ import eventlet
 eventlet.monkey_patch()
 
 import os
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 from flask_socketio import SocketIO
 from flask_cors import CORS
 
@@ -13,6 +13,39 @@ from services.sensor_simulator import SensorSimulator
 from routes.sensor_routes import register_sensor_routes
 from routes.alert_routes import alert_bp
 
+import requests
+from datetime import datetime
+from user_agents import parse
+
+
+# =========================
+# 🔥 ACCESS TRACKING HELPERS
+# =========================
+
+def get_client_ip():
+    if request.headers.get("X-Forwarded-For"):
+        return request.headers.get("X-Forwarded-For").split(",")[0]
+    return request.remote_addr
+
+
+def get_location(ip):
+    try:
+        res = requests.get(f"http://ip-api.com/json/{ip}").json()
+        return {
+            "country": res.get("country"),
+            "region": res.get("regionName"),
+            "city": res.get("city"),
+            "lat": res.get("lat"),
+            "lon": res.get("lon"),
+            "isp": res.get("isp"),
+        }
+    except:
+        return {}
+
+
+# =========================
+# 🚀 CREATE APP
+# =========================
 
 def create_app():
     app = Flask(__name__)
@@ -21,12 +54,16 @@ def create_app():
     # Allow frontend requests (Vercel)
     CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
 
-    # Health check endpoint
+    # =========================
+    # HEALTH CHECK
+    # =========================
     @app.route("/api/health", methods=["GET"])
     def health():
         return jsonify({"status": "ok"}), 200
 
-    # Root endpoint (optional but useful)
+    # =========================
+    # ROOT
+    # =========================
     @app.route("/", methods=["GET"])
     def home():
         return jsonify({
@@ -34,13 +71,45 @@ def create_app():
             "status": "running"
         })
 
+    # =========================
+    # 🔥 ACCESS LOG ROUTE
+    # =========================
+    @app.route("/api/access-log", methods=["GET"])
+    def access_log():
+        ip = get_client_ip()
+        ua_string = request.headers.get("User-Agent")
+
+        ua = parse(ua_string)
+
+        device_info = {
+            "browser": ua.browser.family,
+            "os": ua.os.family,
+            "device": "Mobile" if ua.is_mobile else "Desktop"
+        }
+
+        location = get_location(ip)
+
+        log = {
+            "ip": ip,
+            "location": location,
+            "device_info": device_info,
+            "timestamp": datetime.utcnow().isoformat()
+        }
+
+        # 🔥 SOC-style logging (for now console)
+        print("🚨 ACCESS LOG:", log)
+
+        return jsonify(log)
+
     return app
 
 
-# Create Flask app
+# =========================
+# ⚙️ APP INITIALIZATION
+# =========================
+
 app = create_app()
 
-# Configure SocketIO
 socketio = SocketIO(
     app,
     cors_allowed_origins="*",
@@ -49,22 +118,29 @@ socketio = SocketIO(
     engineio_logger=True
 )
 
-# Initialize database
+# =========================
+# 🗄 INIT SERVICES
+# =========================
+
 init_db()
 
-# Initialize AI anomaly service
 anomaly_service = AnomalyService(socketio=socketio)
 
-# Register API routes
 app.register_blueprint(register_sensor_routes(anomaly_service))
 app.register_blueprint(alert_bp)
 
-# Start IoT sensor simulator
+# =========================
+# 🤖 SENSOR SIMULATOR
+# =========================
+
 simulator = SensorSimulator(anomaly_service, socketio, interval=3)
 socketio.start_background_task(simulator.run)
 
 
-# Run server (local + Render compatibility)
+# =========================
+# 🚀 RUN SERVER
+# =========================
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     socketio.run(
