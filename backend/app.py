@@ -133,5 +133,14 @@ def start_simulator():
     simulator.run()
 
 
-# ✅ START ALWAYS (WORKS WITH GUNICORN)
+# ✅ START SIMULATOR (WORKS WITH RENDER / GUNICORN)
 threading.Thread(target=start_simulator, daemon=True).start()
+
+
+# =========================
+# 🚀 RUN SERVER
+# =========================
+
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5000))
+    socketio.run(app, host="0.0.0.0", port=port)
