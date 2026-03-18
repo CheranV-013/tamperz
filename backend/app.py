@@ -2,6 +2,9 @@ import eventlet
 eventlet.monkey_patch()
 
 import os
+import threading
+from datetime import datetime
+
 from flask import Flask, jsonify, request
 from flask_socketio import SocketIO
 from flask_cors import CORS
@@ -14,7 +17,6 @@ from routes.sensor_routes import register_sensor_routes
 from routes.alert_routes import alert_bp
 
 import requests
-from datetime import datetime
 from user_agents import parse
 
 
@@ -51,19 +53,12 @@ def create_app():
     app = Flask(__name__)
     app.config["SECRET_KEY"] = SECRET_KEY
 
-    # Allow frontend requests (Vercel)
     CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
 
-    # =========================
-    # HEALTH CHECK
-    # =========================
     @app.route("/api/health", methods=["GET"])
     def health():
         return jsonify({"status": "ok"}), 200
 
-    # =========================
-    # ROOT
-    # =========================
     @app.route("/", methods=["GET"])
     def home():
         return jsonify({
@@ -71,9 +66,7 @@ def create_app():
             "status": "running"
         })
 
-    # =========================
-    # 🔥 ACCESS LOG ROUTE
-    # =========================
+    # 🔥 ACCESS LOG
     @app.route("/api/access-log", methods=["GET"])
     def access_log():
         ip = get_client_ip()
@@ -96,7 +89,6 @@ def create_app():
             "timestamp": datetime.utcnow().isoformat()
         }
 
-        # 🔥 SOC-style logging (for now console)
         print("🚨 ACCESS LOG:", log)
 
         return jsonify(log)
@@ -105,7 +97,7 @@ def create_app():
 
 
 # =========================
-# ⚙️ APP INITIALIZATION
+# ⚙️ INITIALIZE APP
 # =========================
 
 app = create_app()
@@ -134,25 +126,12 @@ app.register_blueprint(alert_bp)
 # =========================
 
 simulator = SensorSimulator(anomaly_service, socketio, interval=3)
-import threading
-
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-
-    # 🔥 START SIMULATOR HERE (IMPORTANT)
-    threading.Thread(target=simulator.run, daemon=True).start()
-
-    socketio.run(app, host="0.0.0.0", port=port)
 
 
-# =========================
-# 🚀 RUN SERVER
-# =========================
+def start_simulator():
+    print("🔥 Starting simulator thread...")
+    simulator.run()
 
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    socketio.run(
-        app,
-        host="0.0.0.0",
-        port=port
-    )
+
+# ✅ START ALWAYS (WORKS WITH GUNICORN)
+threading.Thread(target=start_simulator, daemon=True).start()
