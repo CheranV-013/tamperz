@@ -1,10 +1,13 @@
 import Dashboard from "./pages/Dashboard.jsx";
+import { useEffect } from "react";
 
 const App = () => {
+
+  useEffect(() => {
+    fetch(`${import.meta.env.VITE_API_BASE_URL}/api/access-log`);
+  }, []);
+
   return <Dashboard />;
 };
-useEffect(() => {
-  fetch(`${import.meta.env.VITE_API_BASE_URL}/api/access-log`);
-}, []);
 
 export default App;
