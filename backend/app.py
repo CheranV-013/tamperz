@@ -3,6 +3,7 @@ eventlet.monkey_patch()
 
 import os
 from datetime import datetime
+import threading
 
 from flask import Flask, jsonify, request
 from flask_socketio import SocketIO
@@ -65,7 +66,6 @@ def create_app():
             "status": "running"
         })
 
-    # 🔥 ACCESS LOG
     @app.route("/api/access-log", methods=["GET"])
     def access_log():
         ip = get_client_ip()
@@ -126,17 +126,16 @@ app.register_blueprint(alert_bp)
 
 simulator = SensorSimulator(anomaly_service, socketio, interval=3)
 
-simulator_started = False  # prevent duplicate threads
 
+# =========================
+# 🤖 START SIMULATOR SAFELY (FINAL FIX)
+# =========================
 
-@app.before_first_request
-def start_simulator():
-    global simulator_started
+def start_background():
+    print("🔥 Starting simulator thread...", flush=True)
+    socketio.start_background_task(simulator.run)
 
-    if not simulator_started:
-        print("🔥 Starting simulator (Flask hook)...", flush=True)
-        socketio.start_background_task(simulator.run)
-        simulator_started = True
+threading.Thread(target=start_background).start()
 
 
 # =========================
