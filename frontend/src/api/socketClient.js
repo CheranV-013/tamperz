@@ -1,12 +1,13 @@
 import { io } from "socket.io-client";
 
-const socket = io(import.meta.env.VITE_API_BASE_URL, {
-  transports: ["polling", "websocket"],  // ✅ allow fallback
+const socket = io("https://ai-iot-tamper-backend.onrender.com", {
+  path: "/socket.io",
+  transports: ["websocket"],   // force websocket only
+  upgrade: false,              // 🔥 VERY IMPORTANT
   reconnection: true,
   reconnectionAttempts: 20,
   reconnectionDelay: 2000,
   timeout: 20000,
-  withCredentials: true,
 });
 
 export default socket;
