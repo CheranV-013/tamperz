@@ -43,6 +43,6 @@ class SensorSimulator:
         while True:
             payload = self._generate_payload()
             print("🔥 SENSOR EMIT:", payload, flush=True)
-            self.socketio.emit("sensor_data", payload, namespace="/")
+            self.anomaly_service.process_sensor_data(payload, source="simulator")
             
             eventlet.sleep(self.interval)
