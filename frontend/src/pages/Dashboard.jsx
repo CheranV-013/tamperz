@@ -52,7 +52,7 @@ const Dashboard = () => {
       setAlerts((prev) => [alert, ...prev].slice(0, 50));
     });
 
-    socket.on("sensor_update", (payload) => {
+    socket.on("sensor_data", (payload) => {
       console.log("🔥 DATA:", payload);
 
       setSensorData((prev) => {
@@ -84,7 +84,7 @@ const Dashboard = () => {
       socket.off("connect");
       socket.off("disconnect");
       socket.off("tamper_alert");
-      socket.off("sensor_update");
+      socket.off("sensor_data");
     };
   }, []);
 

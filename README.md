@@ -19,7 +19,7 @@ Sensor Simulator
   -> Flask API (/api/sensor-data)
   -> Anomaly Service (IForest + Autoencoder + Rules)
   -> SQLite (sensor_logs, alerts)
-  -> Socket.IO (tamper_alert, sensor_update)
+  -> Socket.IO (tamper_alert, sensor_data)
   -> React SOC Dashboard
 ```
 
@@ -82,7 +82,7 @@ Frontend runs at `http://localhost:5173`
 
 ## Socket Events
 - `tamper_alert` — emitted when anomaly detected
-- `sensor_update` — live telemetry stream for charts
+- `sensor_data` — live telemetry stream for charts
 
 ---
 Built for professional SOC monitoring workflows with clean, modular, production-ready code.

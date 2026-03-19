@@ -74,7 +74,7 @@ class AnomalyService:
         insert_sensor_log(payload)
 
         if self.socketio:
-            self.socketio.emit("sensor_update", payload)
+            self.socketio.emit("sensor_data", payload)
 
         anomaly_detected = (
             iforest_score >= IFOREST_THRESHOLD
