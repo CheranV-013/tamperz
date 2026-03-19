@@ -64,7 +64,10 @@ def create_app():
             "service": "AI IoT Tamper Detection API",
             "status": "running"
         })
-
+    @socketio.on("connect")
+    def handle_connect():
+        print("✅ CLIENT CONNECTED", flush=True)
+    
     @app.route("/api/access-log", methods=["GET"])
     def access_log():
         ip = get_client_ip()
