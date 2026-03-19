@@ -73,8 +73,9 @@ class AnomalyService:
 
         insert_sensor_log(payload)
 
+        # ✅ FIX 1: add namespace
         if self.socketio:
-            self.socketio.emit("sensor_data", payload)
+            self.socketio.emit("sensor_data", payload, namespace="/")
 
         anomaly_detected = (
             iforest_score >= IFOREST_THRESHOLD
@@ -93,9 +94,13 @@ class AnomalyService:
                 "container_id": payload["container_id"],
                 "source": source,
             }
+
             insert_alert(alert["type"], alert["sensor"], alert["score"])
+
+            # ✅ FIX 2: add namespace
             if self.socketio:
-                self.socketio.emit("tamper_alert", alert)
+                self.socketio.emit("tamper_alert", alert, namespace="/")
+
             return alert
 
         return None
