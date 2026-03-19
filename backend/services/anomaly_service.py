@@ -62,6 +62,9 @@ class AnomalyService:
         return triggers
 
     def process_sensor_data(self, payload, source="api"):
+        if "timestamp" not in payload:
+            payload["timestamp"] = datetime.utcnow().isoformat()
+
         vector = np.array([[payload[f] for f in FEATURES]], dtype=np.float32)
 
         iforest_score = float(self.iforest.score(vector)[0])
@@ -69,6 +72,9 @@ class AnomalyService:
         rule_triggers = self._rule_based_check(payload)
 
         insert_sensor_log(payload)
+
+        if self.socketio:
+            self.socketio.emit("sensor_update", payload)
 
         anomaly_detected = (
             iforest_score >= IFOREST_THRESHOLD
