@@ -44,4 +44,5 @@ class SensorSimulator:
             payload = self._generate_payload()
             print("🔥 SENSOR EMIT:", payload, flush=True)
             self.socketio.emit("sensor_data", payload, broadcast=True)
+            
             eventlet.sleep(self.interval)

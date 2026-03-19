@@ -64,10 +64,7 @@ def create_app():
             "service": "AI IoT Tamper Detection API",
             "status": "running"
         })
-    @socketio.on("connect")
-    def handle_connect():
-        print("✅ CLIENT CONNECTED", flush=True)
-    
+
     @app.route("/api/access-log", methods=["GET"])
     def access_log():
         ip = get_client_ip()
@@ -108,8 +105,17 @@ socketio = SocketIO(
     cors_allowed_origins="*",
     async_mode="eventlet",
     logger=True,
-    engineio_logger=True
+    engineio_logger=True,
+    ping_timeout=60,
+    ping_interval=25,
+    cors_credentials=True
 )
+
+# ✅ CORRECT PLACE FOR SOCKET HANDLER
+@socketio.on("connect")
+def handle_connect():
+    print("✅ CLIENT CONNECTED TO BACKEND", flush=True)
+
 
 # =========================
 # 🗄 INIT SERVICES
@@ -122,6 +128,7 @@ anomaly_service = AnomalyService(socketio=socketio)
 app.register_blueprint(register_sensor_routes(anomaly_service))
 app.register_blueprint(alert_bp)
 
+
 # =========================
 # 🤖 SENSOR SIMULATOR
 # =========================
@@ -130,13 +137,14 @@ simulator = SensorSimulator(anomaly_service, socketio, interval=3)
 
 
 # =========================
-# 🤖 START SIMULATOR SAFELY (FINAL FIX)
+# 🤖 START SIMULATOR
 # =========================
 
 def start_background():
     print("🔥 Starting simulator thread...", flush=True)
     socketio.start_background_task(simulator.run)
 
+# ✅ USE EVENTLET (NOT threading)
 eventlet.spawn(start_background)
 
 
