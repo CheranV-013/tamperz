@@ -22,6 +22,7 @@ const Dashboard = () => {
   const [connected, setConnected] = useState(false);
 
   useEffect(() => {
+    window.socket = socket;
     const loadAlerts = async () => {
       try {
         const response = await apiClient.get("/api/alerts");
