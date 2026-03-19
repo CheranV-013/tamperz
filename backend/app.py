@@ -3,7 +3,6 @@ eventlet.monkey_patch()
 
 import os
 from datetime import datetime
-import threading
 
 from flask import Flask, jsonify, request
 from flask_socketio import SocketIO
@@ -135,7 +134,7 @@ def start_background():
     print("🔥 Starting simulator thread...", flush=True)
     socketio.start_background_task(simulator.run)
 
-threading.Thread(target=start_background).start()
+eventlet.spawn(start_background)
 
 
 # =========================
