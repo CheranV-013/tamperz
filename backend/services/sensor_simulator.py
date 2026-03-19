@@ -38,10 +38,10 @@ class SensorSimulator:
         return payload
 
     def run(self):
+        print("🚀 Simulator loop started", flush=True)
+
         while True:
             payload = self._generate_payload()
-            payload["timestamp"] = datetime.utcnow().isoformat()
-
-            self.anomaly_service.process_sensor_data(payload, source="simulator")
-
+            print("🔥 SENSOR EMIT:", payload, flush=True)
+            self.socketio.emit("sensor_data", payload)
             eventlet.sleep(self.interval)

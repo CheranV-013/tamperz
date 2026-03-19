@@ -2,7 +2,6 @@ import eventlet
 eventlet.monkey_patch()
 
 import os
-import threading
 from datetime import datetime
 
 from flask import Flask, jsonify, request
@@ -127,21 +126,17 @@ app.register_blueprint(alert_bp)
 
 simulator = SensorSimulator(anomaly_service, socketio, interval=3)
 
-simulator_started = False  # ✅ prevent duplicate threads
+simulator_started = False  # prevent duplicate threads
 
 
-@socketio.on("connect")
-def start_simulator_on_connect():
+@app.before_first_request
+def start_simulator():
     global simulator_started
 
     if not simulator_started:
-        print("🔥 Starting simulator (on first client connect)...", flush=True)
+        print("🔥 Starting simulator (Flask hook)...", flush=True)
         socketio.start_background_task(simulator.run)
         simulator_started = True
-
-# ✅ START SIMULATOR (WORKS WITH RENDER / GUNICORN)
-
-print("🔥 SENSOR EMIT:", payload, flush=True)
 
 
 # =========================
