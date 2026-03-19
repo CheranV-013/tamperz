@@ -127,14 +127,21 @@ app.register_blueprint(alert_bp)
 
 simulator = SensorSimulator(anomaly_service, socketio, interval=3)
 
+simulator_started = False  # ✅ prevent duplicate threads
 
-def start_simulator():
-    print("🔥 Starting simulator thread...")
-    simulator.run()
 
+@socketio.on("connect")
+def start_simulator_on_connect():
+    global simulator_started
+
+    if not simulator_started:
+        print("🔥 Starting simulator (on first client connect)...", flush=True)
+        socketio.start_background_task(simulator.run)
+        simulator_started = True
 
 # ✅ START SIMULATOR (WORKS WITH RENDER / GUNICORN)
-socketio.start_background_task(simulator.run)
+
+print("🔥 SENSOR EMIT:", payload, flush=True)
 
 
 # =========================
