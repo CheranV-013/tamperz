@@ -128,7 +128,13 @@ def handle_connect():
 
 init_db()
 
-anomaly_service = AnomalyService(socketio=socketio)
+anomaly_service = AnomalyService(socketio)
+simulator = SensorSimulator(anomaly_service, socketio)
+
+def start_background():
+    simulator.run()
+
+eventlet.spawn(start_background)
 
 app.register_blueprint(register_sensor_routes(anomaly_service))
 app.register_blueprint(alert_bp)
