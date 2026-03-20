@@ -75,6 +75,7 @@ const Dashboard = () => {
     };
 
     const handleVisitor = (data) => {
+      console.log("👀 VISITOR RECEIVED:", data);  
       setVisitors((prev) => [data, ...prev].slice(0, 50));
     };
 
