@@ -1,6 +1,6 @@
 import eventlet
 eventlet.monkey_patch()
-
+from routes.tracking import tracking_bp
 import os
 from datetime import datetime
 from extensions import socketio   # ✅ import from extensions
@@ -28,6 +28,8 @@ CORS(
     resources={r"/*": {"origins": ["http://localhost:5173", "https://tamperz.vercel.app"]}},
     supports_credentials=True,
 )
+
+app.register_blueprint(tracking_bp)
 
 socketio = SocketIO(
     app,

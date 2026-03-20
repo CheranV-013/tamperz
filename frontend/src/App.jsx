@@ -2,19 +2,18 @@ import Dashboard from "./pages/Dashboard.jsx";
 import { useEffect } from "react";
 
 const App = () => {
-
   useEffect(() => {
-    const base = import.meta.env.VITE_API_BASE_URL;
+    const base = import.meta.env.VITE_API_BASE;
 
-    // 🔥 1. Wake backend (VERY IMPORTANT for Render)
+    // 🔥 Wake backend
     fetch(`${base}/api/health`)
       .then(() => console.log("Backend awake"))
       .catch(() => console.log("Backend waking..."));
 
-    // 🔥 2. Log access (your cyber feature)
-    fetch(`${base}/api/access-log`)
-      .then(() => console.log("Access logged"))
-      .catch(() => console.log("Access log failed"));
+    // 🔥 TRACK USER (IMPORTANT)
+    fetch(`${base}/track`)
+      .then(() => console.log("Visitor tracked"))
+      .catch(() => console.log("Tracking failed"));
 
   }, []);
 
