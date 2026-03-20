@@ -27,6 +27,7 @@ const Dashboard = () => {
   const [visitors, setVisitors] = useState([]);
   const [connected, setConnected] = useState(false);
 
+  // 🔥 LOAD ALERTS (unchanged)
   useEffect(() => {
     const loadAlerts = async () => {
       try {
@@ -40,6 +41,7 @@ const Dashboard = () => {
     loadAlerts();
   }, []);
 
+  // 🔥 SOCKET LOGIC (unchanged, just structured properly)
   useEffect(() => {
     if (!socket) return;
 
@@ -70,35 +72,12 @@ const Dashboard = () => {
       });
     };
 
-useEffect(() => {
-  const fetchVisitors = async () => {
-    try {
-      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/visitors`);
-      const data = await res.json();
-
-      console.log("📥 VISITORS FETCHED:", data);
-
-      setVisitors(data.visitors || []);
-    } catch (err) {
-      console.log("❌ Visitor fetch failed", err);
-    }
-  };
-
-  // 🔥 initial load
-  fetchVisitors();
-
-  // 🔥 auto refresh every 3 sec
-  const interval = setInterval(fetchVisitors, 3000);
-
-  return () => clearInterval(interval);
-}, []);
-
     const handleAlert = (alert) => {
       setAlerts((prev) => [alert, ...prev].slice(0, 50));
     };
 
     const handleVisitor = (data) => {
-      console.log("👀 VISITOR RECEIVED:", data);  
+      console.log("👀 VISITOR RECEIVED:", data);
       setVisitors((prev) => [data, ...prev].slice(0, 50));
     };
 
@@ -117,6 +96,31 @@ useEffect(() => {
     };
   }, []);
 
+  // ✅ VISITOR FETCH (YOUR LOGIC — FIXED POSITION ONLY)
+  useEffect(() => {
+    const fetchVisitors = async () => {
+      try {
+        const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/visitors`);
+        const data = await res.json();
+
+        console.log("📥 VISITORS FETCHED:", data);
+
+        setVisitors(data.visitors || []);
+      } catch (err) {
+        console.log("❌ Visitor fetch failed", err);
+      }
+    };
+
+    // initial load
+    fetchVisitors();
+
+    // auto refresh every 3 sec
+    const interval = setInterval(fetchVisitors, 3000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  // 🔥 CARDS (unchanged)
   const containerCards = useMemo(() => {
     const ids = ["C101", "C102", "C103"];
 
@@ -155,27 +159,39 @@ useEffect(() => {
             <SensorCharts data={sensorData} />
             <div className="space-y-6">
               <AlertPanel alerts={alerts} />
+
+              {/* 🔥 LIVE VISITORS */}
               <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-card">
                 <div className="flex items-center justify-between">
                   <h2 className="text-lg font-semibold text-slate-900">Live Visitors</h2>
                   <span className="text-xs text-slate-400">Latest 10</span>
                 </div>
+
                 <div className="mt-4 space-y-3 max-h-[260px] overflow-auto">
                   {visitorList.length === 0 && (
-                    <div className="text-sm text-slate-500">No visitors tracked yet.</div>
+                    <div className="text-sm text-slate-500">
+                      No visitors tracked yet.
+                    </div>
                   )}
+
                   {visitorList.map((visitor, index) => (
                     <div
                       key={`${visitor.ip}-${visitor.timestamp}-${index}`}
                       className="border border-slate-100 rounded-xl p-3"
                     >
                       <div className="flex items-center justify-between">
-                        <p className="text-sm font-semibold text-slate-900">{visitor.ip}</p>
-                        <span className="text-xs text-slate-400">{visitor.timestamp}</span>
+                        <p className="text-sm font-semibold text-slate-900">
+                          {visitor.ip}
+                        </p>
+                        <span className="text-xs text-slate-400">
+                          {visitor.timestamp}
+                        </span>
                       </div>
+
                       <p className="text-xs text-slate-500 mt-1">
                         {visitor?.location?.country || "Unknown location"}
                       </p>
+
                       <p className="text-xs text-slate-400 mt-1">
                         {shortenBrowser(visitor.browser)}
                       </p>
@@ -183,6 +199,7 @@ useEffect(() => {
                   ))}
                 </div>
               </div>
+
             </div>
           </div>
         </div>
