@@ -7,9 +7,8 @@ import AlertPanel from "../components/AlertPanel.jsx";
 import SensorCharts from "../components/SensorCharts.jsx";
 
 import apiClient from "../api/apiClient.js";
-import socket from "../api/socketClient.js"; // ✅ ONLY ONE SOCKET SOURCE
+import socket from "../api/socketClient.js";
 
-// ✅ format helper
 const formatTime = (iso) => {
   if (!iso) return "--";
   const date = new Date(iso);
@@ -21,7 +20,6 @@ const Dashboard = () => {
   const [sensorData, setSensorData] = useState([]);
   const [connected, setConnected] = useState(false);
 
-  // ✅ Load alerts once
   useEffect(() => {
     const loadAlerts = async () => {
       try {
@@ -36,24 +34,12 @@ const Dashboard = () => {
     loadAlerts();
   }, []);
 
-  // ✅ SOCKET LISTENERS (ONLY ONCE)
   useEffect(() => {
-    if (!socket) return;
-
-    console.log("🔌 Initializing socket listeners...");
-
-    socket.on("connect", () => {
-      console.log("✅ CONNECTED:", socket.id);
-      setConnected(true);
-    });
-
-    socket.on("disconnect", () => {
-      console.log("❌ DISCONNECTED");
-      setConnected(false);
-    });
+    socket.on("connect", () => setConnected(true));
+    socket.on("disconnect", () => setConnected(false));
 
     socket.on("sensor_data", (payload) => {
-      console.log("🔥 DATA RECEIVED:", payload);
+      console.log("DATA RECEIVED", payload);
 
       setSensorData((prev) => {
         const next = [
@@ -64,7 +50,9 @@ const Dashboard = () => {
             temperature: payload.temperature,
             humidity: payload.humidity,
             vibration: payload.vibration,
-            anomaly: payload.vibration > 0.6 ? payload.vibration : null,
+            door_status: payload.door_status,
+            gps_shift: payload.gps_shift,
+            battery_voltage: payload.battery_voltage,
           },
         ];
         return next.slice(-50);
@@ -72,26 +60,17 @@ const Dashboard = () => {
     });
 
     socket.on("tamper_alert", (alert) => {
-      console.log("🚨 ALERT RECEIVED:", alert);
       setAlerts((prev) => [alert, ...prev].slice(0, 50));
     });
 
-    // ✅ GLOBAL DEBUG
-    socket.onAny((event, data) => {
-      console.log("📡 EVENT:", event, data);
-    });
-
-    // ✅ CLEANUP
     return () => {
       socket.off("connect");
       socket.off("disconnect");
       socket.off("sensor_data");
       socket.off("tamper_alert");
-      socket.offAny();
     };
   }, []);
 
-  // ✅ Container UI mapping
   const containerCards = useMemo(() => {
     const ids = ["C101", "C102", "C103"];
 
@@ -107,7 +86,7 @@ const Dashboard = () => {
         temperature: latest ? latest.temperature.toFixed(1) : "--",
         humidity: latest ? Math.round(latest.humidity) : "--",
         vibration: latest ? latest.vibration.toFixed(2) : "--",
-        battery: latest ? "3.9" : "--",
+        battery: latest ? latest.battery_voltage?.toFixed(2) : "--",
       };
     });
   }, [sensorData, alerts]);

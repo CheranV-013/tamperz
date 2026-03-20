@@ -1,17 +1,31 @@
 import { io } from "socket.io-client";
 
-const socket = io("https://ai-iot-tamper-backend.onrender.com", {
-  path: "/socket.io",
-  transports: ["polling", "websocket"], // ✅ ALLOW FALLBACK
-  withCredentials: true,
-});
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 
-// make global (optional but fine)
-window.socket = socket;
+let socketInstance = null;
 
-// debug
-socket.onAny((event, data) => {
-  console.log("🔥 GLOBAL EVENT:", event, data);
-});
+const createSocket = () => {
+  const socket = io(API_BASE_URL, {
+    transports: ["polling", "websocket"],
+    reconnection: true,
+    reconnectionAttempts: 20,
+    reconnectionDelay: 2000,
+    timeout: 20000,
+  });
 
-export default socket;
+  socket.onAny((event, ...args) => {
+    console.log("EVENT:", event, args);
+  });
+
+  return socket;
+};
+
+const getSocket = () => {
+  if (!socketInstance) {
+    socketInstance = createSocket();
+  }
+  return socketInstance;
+};
+
+export default getSocket();

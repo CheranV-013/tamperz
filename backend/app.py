@@ -52,7 +52,11 @@ def create_app():
     app = Flask(__name__)
     app.config["SECRET_KEY"] = SECRET_KEY
 
-    CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
+    CORS(
+        app,
+        resources={r"/*": {"origins": ["https://tamperz.vercel.app"]}},
+        supports_credentials=True,
+    )
 
     @app.route("/api/health", methods=["GET"])
     def health():
@@ -102,11 +106,14 @@ app = create_app()
 
 socketio = SocketIO(
     app,
-    cors_allowed_origins="*",
+    cors_allowed_origins=[
+        "https://tamperz.vercel.app",
+    ],
     async_mode="eventlet",
     logger=True,
     engineio_logger=True,
-    transports=["websocket"],   # 🔥 ADD THIS
+    ping_timeout=60,
+    ping_interval=25,
 )
 
 # ✅ CORRECT PLACE FOR SOCKET HANDLER
