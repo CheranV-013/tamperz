@@ -1,6 +1,6 @@
 import eventlet
 eventlet.monkey_patch()
-from routes.tracking import tracking_bp
+
 import os
 from datetime import datetime
 from extensions import socketio   # ✅ import from extensions
@@ -31,7 +31,9 @@ CORS(
 
 app.register_blueprint(tracking_bp)
 
-socketio = SocketIO(
+
+
+socketio.init_app(
     app,
     cors_allowed_origins=["http://localhost:5173", "https://tamperz.vercel.app"],
     async_mode="eventlet",
@@ -112,7 +114,7 @@ init_db()
 anomaly_service = AnomalyService(socketio=socketio)
 app.register_blueprint(register_sensor_routes(anomaly_service))
 app.register_blueprint(alert_bp)
-app.register_blueprint(tracking_bp)
+
 
 simulator = SensorSimulator(anomaly_service, socketio, interval=3)
 socketio.start_background_task(simulator.run)
