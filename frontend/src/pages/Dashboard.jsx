@@ -70,6 +70,29 @@ const Dashboard = () => {
       });
     };
 
+useEffect(() => {
+  const fetchVisitors = async () => {
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/visitors`);
+      const data = await res.json();
+
+      console.log("📥 VISITORS FETCHED:", data);
+
+      setVisitors(data.visitors || []);
+    } catch (err) {
+      console.log("❌ Visitor fetch failed", err);
+    }
+  };
+
+  // 🔥 initial load
+  fetchVisitors();
+
+  // 🔥 auto refresh every 3 sec
+  const interval = setInterval(fetchVisitors, 3000);
+
+  return () => clearInterval(interval);
+}, []);
+
     const handleAlert = (alert) => {
       setAlerts((prev) => [alert, ...prev].slice(0, 50));
     };

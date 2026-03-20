@@ -5,6 +5,9 @@ from extensions import socketio
 
 tracking_bp = Blueprint("tracking", __name__)
 
+# ✅ GLOBAL STORAGE (VERY IMPORTANT)
+visitor_logs = []
+
 def get_location(ip):
     try:
         res = requests.get(f"http://ip-api.com/json/{ip}", timeout=3)
@@ -19,6 +22,7 @@ def get_location(ip):
         print("❌ Location error:", e)
         return {}
 
+# ✅ TRACK ROUTE
 @tracking_bp.route("/track", methods=["GET"])
 def track_user():
     try:
@@ -36,9 +40,13 @@ def track_user():
             "timestamp": datetime.utcnow().isoformat()
         }
 
-        print("TRACK:", log, flush=True)    
+        print("TRACK:", log, flush=True)
 
-        # 🔥 SAFE EMIT
+        # ✅ STORE VISITOR (IMPORTANT)
+        visitor_logs.insert(0, log)
+        visitor_logs[:] = visitor_logs[:50]  # keep last 50
+
+        # ✅ SOCKET EMIT (REAL-TIME)
         try:
             socketio.emit("visitor_update", log)
         except Exception as e:
@@ -49,3 +57,9 @@ def track_user():
     except Exception as e:
         print("❌ TRACK ERROR:", e, flush=True)
         return {"error": str(e)}, 500
+
+
+# ✅ VISITORS API (FOR FRONTEND FALLBACK)
+@tracking_bp.route("/visitors", methods=["GET"])
+def get_visitors():
+    return {"visitors": visitor_logs}
