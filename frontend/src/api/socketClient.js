@@ -2,13 +2,14 @@ import { io } from "socket.io-client";
 
 const socket = io("https://ai-iot-tamper-backend.onrender.com", {
   path: "/socket.io",
-  transports: ["websocket"],
+  transports: ["polling", "websocket"], // ✅ ALLOW FALLBACK
+  withCredentials: true,
 });
 
-// make global
+// make global (optional but fine)
 window.socket = socket;
 
-// debug (optional)
+// debug
 socket.onAny((event, data) => {
   console.log("🔥 GLOBAL EVENT:", event, data);
 });
