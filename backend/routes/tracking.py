@@ -36,7 +36,7 @@ def track_user():
             "timestamp": datetime.utcnow().isoformat()
         }
 
-        print("TRACK:", log, flush=True)
+        print("TRACK:", log, flush=True)    
 
         # 🔥 SAFE EMIT
         try:
