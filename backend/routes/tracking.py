@@ -7,7 +7,7 @@ tracking_bp = Blueprint("tracking", __name__)
 
 def get_location(ip):
     try:
-        res = requests.get(f"http://ip-api.com/json/{ip}")
+        res = requests.get(f"http://ip-api.com/json/{ip}", timeout=3)
         data = res.json()
         return {
             "city": data.get("city"),
@@ -15,28 +15,37 @@ def get_location(ip):
             "lat": data.get("lat"),
             "lon": data.get("lon")
         }
-    except:
+    except Exception as e:
+        print("❌ Location error:", e)
         return {}
 
 @tracking_bp.route("/track", methods=["GET"])
 def track_user():
-    forwarded_for = request.headers.get("X-Forwarded-For", "")
-    if forwarded_for:
-        ip = forwarded_for.split(",")[0].strip()
-    else:
-        ip = request.remote_addr
-    user_agent = request.headers.get("User-Agent")
+    try:
+        forwarded_for = request.headers.get("X-Forwarded-For", "")
+        ip = forwarded_for.split(",")[0].strip() if forwarded_for else request.remote_addr
 
-    location = get_location(ip)
+        user_agent = request.headers.get("User-Agent", "Unknown")
 
-    log = {
-        "ip": ip,
-        "browser": user_agent,
-        "location": location,
-        "timestamp": datetime.utcnow().isoformat()
-    }
+        location = get_location(ip)
 
-    print("TRACK:", log)
-    socketio.emit("visitor_update", log, broadcast=True)
+        log = {
+            "ip": ip,
+            "browser": user_agent,
+            "location": location,
+            "timestamp": datetime.utcnow().isoformat()
+        }
 
-    return {"status": "tracked", "data": log}
+        print("TRACK:", log, flush=True)
+
+        # 🔥 SAFE EMIT
+        try:
+            socketio.emit("visitor_update", log)
+        except Exception as e:
+            print("❌ Socket emit error:", e)
+
+        return {"status": "tracked", "data": log}
+
+    except Exception as e:
+        print("❌ TRACK ERROR:", e, flush=True)
+        return {"error": str(e)}, 500
