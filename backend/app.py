@@ -106,9 +106,7 @@ socketio = SocketIO(
     async_mode="eventlet",
     logger=True,
     engineio_logger=True,
-    ping_timeout=60,
-    ping_interval=25,
-    cors_credentials=True
+    transports=["websocket"],   # 🔥 ADD THIS
 )
 
 # ✅ CORRECT PLACE FOR SOCKET HANDLER

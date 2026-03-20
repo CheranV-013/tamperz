@@ -47,60 +47,95 @@ class AnomalyService:
 
     def _rule_based_check(self, payload):
         triggers = []
+
         if payload["door_status"] == 1:
             triggers.append("door_status")
+
         if payload["vibration"] > 0.6:
             triggers.append("vibration")
+
         if payload["gps_shift"] > 0.6:
             triggers.append("gps_shift")
+
         if payload["battery_voltage"] < 3.2:
             triggers.append("battery_voltage")
+
         if payload["temperature"] < 10 or payload["temperature"] > 40:
             triggers.append("temperature")
+
         if payload["humidity"] < 20 or payload["humidity"] > 85:
             triggers.append("humidity")
+
         return triggers
 
     def process_sensor_data(self, payload, source="api"):
-        if "timestamp" not in payload:
-            payload["timestamp"] = datetime.utcnow().isoformat()
+        try:
+            # ✅ Ensure timestamp exists
+            if "timestamp" not in payload:
+                payload["timestamp"] = datetime.utcnow().isoformat()
 
-        vector = np.array([[payload[f] for f in FEATURES]], dtype=np.float32)
+            # ✅ Convert to model vector
+            vector = np.array([[payload[f] for f in FEATURES]], dtype=np.float32)
 
-        iforest_score = float(self.iforest.score(vector)[0])
-        auto_score = float(self.autoencoder.score(vector)[0])
-        rule_triggers = self._rule_based_check(payload)
+            # ✅ Model scores
+            iforest_score = float(self.iforest.score(vector)[0])
+            auto_score = float(self.autoencoder.score(vector)[0])
+            rule_triggers = self._rule_based_check(payload)
 
-        insert_sensor_log(payload)
+            # ✅ Store sensor log
+            insert_sensor_log(payload)
 
-        # ✅ FIX 1: add namespace
-        if self.socketio:
-            self.socketio.emit("sensor_data", payload, namespace="/")
-
-        anomaly_detected = (
-            iforest_score >= IFOREST_THRESHOLD
-            or auto_score >= AUTOENCODER_THRESHOLD
-            or len(rule_triggers) > 0
-        )
-
-        if anomaly_detected:
-            sensor = rule_triggers[0] if rule_triggers else "multi"
-            score = max(iforest_score, auto_score, 0.9 if rule_triggers else 0.0)
-            alert = {
-                "type": "Tamper",
-                "sensor": sensor,
-                "score": round(score, 2),
-                "time": datetime.utcnow().isoformat(),
-                "container_id": payload["container_id"],
-                "source": source,
-            }
-
-            insert_alert(alert["type"], alert["sensor"], alert["score"])
-
-            # ✅ FIX 2: add namespace
+            # ✅ EMIT SENSOR DATA (FIXED)
             if self.socketio:
-                self.socketio.emit("tamper_alert", alert, namespace="/")
+                print("📡 EMITTING SENSOR DATA:", payload, flush=True)
+                self.socketio.emit(
+                    "sensor_data",
+                    payload,
+                    namespace="/",
+                    broadcast=True   # 🔥 ensures all clients receive
+                )
 
-            return alert
+            # ✅ Check anomaly
+            anomaly_detected = (
+                iforest_score >= IFOREST_THRESHOLD
+                or auto_score >= AUTOENCODER_THRESHOLD
+                or len(rule_triggers) > 0
+            )
 
-        return None
+            if anomaly_detected:
+                sensor = rule_triggers[0] if rule_triggers else "multi"
+                score = max(
+                    iforest_score,
+                    auto_score,
+                    0.9 if rule_triggers else 0.0
+                )
+
+                alert = {
+                    "type": "Tamper",
+                    "sensor": sensor,
+                    "score": round(score, 2),
+                    "time": datetime.utcnow().isoformat(),
+                    "container_id": payload["container_id"],
+                    "source": source,
+                }
+
+                # ✅ Store alert
+                insert_alert(alert["type"], alert["sensor"], alert["score"])
+
+                # ✅ EMIT ALERT (FIXED)
+                if self.socketio:
+                    print("🚨 EMITTING ALERT:", alert, flush=True)
+                    self.socketio.emit(
+                        "tamper_alert",
+                        alert,
+                        namespace="/",
+                        broadcast=True
+                    )
+
+                return alert
+
+            return None
+
+        except Exception as e:
+            print("❌ ERROR in process_sensor_data:", str(e), flush=True)
+            return None
