@@ -3,13 +3,14 @@ eventlet.monkey_patch()
 
 import os
 from datetime import datetime
-from extensions import socketio   # ✅ import from extensions
+
+from extensions import socketio
+from routes.tracking import tracking_bp   # ✅ IMPORT FIRST
 
 import requests
 from user_agents import parse
 
 from flask import Flask, jsonify, request
-from flask_socketio import SocketIO
 from flask_cors import CORS
 
 from config.settings import SECRET_KEY
@@ -44,7 +45,7 @@ socketio.init_app(
 )
 
 # import after socketio init to avoid circular import issues
-from routes.tracking import tracking_bp
+
 
 
 def get_client_ip():
