@@ -1,19 +1,20 @@
 import Dashboard from "./pages/Dashboard.jsx";
 import { useEffect } from "react";
+import socket from "./api/socketClient";
 
 const App = () => {
   useEffect(() => {
-    const base = import.meta.env.VITE_API_BASE;
+    const base = import.meta.env.VITE_API_BASE_URL;
 
-    // 🔥 Wake backend
-    fetch(`${base}/api/health`)
-      .then(() => console.log("Backend awake"))
-      .catch(() => console.log("Backend waking..."));
+    console.log("🌐 API:", base);
 
-    // 🔥 TRACK USER (IMPORTANT)
-    fetch(`${base}/track`)
-      .then(() => console.log("Visitor tracked"))
-      .catch(() => console.log("Tracking failed"));
+    socket.on("connect", () => {
+      console.log("🔥 Socket ready → calling /track");
+
+      fetch(`${base}/track`)
+        .then(() => console.log("✅ Visitor tracked"))
+        .catch(() => console.log("❌ Track failed"));
+    });
 
   }, []);
 
