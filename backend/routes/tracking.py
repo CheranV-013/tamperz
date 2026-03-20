@@ -2,6 +2,7 @@ from flask import Blueprint, request
 import requests
 from datetime import datetime
 from app import socketio
+from extensions import socketio
 
 tracking_bp = Blueprint("tracking", __name__)
 

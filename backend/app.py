@@ -3,6 +3,7 @@ eventlet.monkey_patch()
 
 import os
 from datetime import datetime
+from extensions import socketio   # ✅ import from extensions
 
 import requests
 from user_agents import parse
