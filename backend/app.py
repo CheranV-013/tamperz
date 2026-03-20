@@ -52,13 +52,13 @@ def create_app():
     app = Flask(__name__)
     app.config["SECRET_KEY"] = SECRET_KEY
 
-    CORS(
+    socketio = SocketIO(
     app,
-    resources={r"/*": {"origins": [
+    cors_allowed_origins=[
         "http://localhost:5173",
         "https://tamperz.vercel.app"
-    ]}},
-    supports_credentials=True
+    ],
+    async_mode="eventlet"
 )
 
     @app.route("/api/health", methods=["GET"])
