@@ -91,8 +91,7 @@ class AnomalyService:
                 self.socketio.emit(
                     "sensor_data",
                     payload,
-                    namespace="/",
-                    broadcast=True   # 🔥 ensures all clients receive
+                    namespace="/"
                 )
 
             # ✅ Check anomaly
@@ -128,8 +127,7 @@ class AnomalyService:
                     self.socketio.emit(
                         "tamper_alert",
                         alert,
-                        namespace="/",
-                        broadcast=True
+                        namespace="/"
                     )
 
                 return alert
