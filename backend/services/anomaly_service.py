@@ -85,13 +85,16 @@ class AnomalyService:
             # ✅ Store sensor log
             insert_sensor_log(payload)
 
-            # ✅ EMIT SENSOR DATA (FIXED)
+            # 🔥 DEBUG BEFORE EMIT
+            print("📡 EMITTING SENSOR DATA:", payload, flush=True)
+
+            # ✅ EMIT SENSOR DATA (FINAL FIX)
             if self.socketio:
-                print("📡 EMITTING SENSOR DATA:", payload, flush=True)
                 self.socketio.emit(
                     "sensor_data",
                     payload,
                     namespace="/"
+                    # ❗ DO NOT use broadcast or to=None (not needed)
                 )
 
             # ✅ Check anomaly
@@ -121,9 +124,11 @@ class AnomalyService:
                 # ✅ Store alert
                 insert_alert(alert["type"], alert["sensor"], alert["score"])
 
-                # ✅ EMIT ALERT (FIXED)
+                # 🔥 DEBUG ALERT
+                print("🚨 EMITTING ALERT:", alert, flush=True)
+
+                # ✅ EMIT ALERT (FINAL FIX)
                 if self.socketio:
-                    print("🚨 EMITTING ALERT:", alert, flush=True)
                     self.socketio.emit(
                         "tamper_alert",
                         alert,
