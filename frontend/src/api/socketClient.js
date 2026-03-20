@@ -1,18 +1,16 @@
 import { io } from "socket.io-client";
 
-// ✅ LOCAL TEST URL
-const BASE_URL = import.meta.env.VITE_API_BASE_URL;
-
-console.log("🚀 Connecting to:", BASE_URL);
-
-const socket = io(BASE_URL, {
-  path: "/socket.io",
-  transports: ["websocket"],
+const socket = io("https://ai-iot-tamper-backend.onrender.com", {
+  transports: ["websocket", "polling"],
+  reconnection: true,
 });
 
-// 🔥 DEBUG (important)
-socket.onAny((event, data) => {
-  console.log("📡 EVENT:", event, data);
+socket.on("connect", () => {
+  console.log("✅ SOCKET CONNECTED");
+});
+
+socket.on("connect_error", (err) => {
+  console.log("❌ SOCKET ERROR:", err);
 });
 
 export default socket;

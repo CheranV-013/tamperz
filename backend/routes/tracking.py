@@ -40,7 +40,7 @@ def track_user():
 
         # 🔥 SAFE EMIT
         try:
-            socketio.emit("visitor_update", log)
+            socketio.emit("visitor_update", log, broadcast=True)
         except Exception as e:
             print("❌ Socket emit error:", e)
 
