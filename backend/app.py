@@ -53,10 +53,13 @@ def create_app():
     app.config["SECRET_KEY"] = SECRET_KEY
 
     CORS(
-        app,
-        resources={r"/*": {"origins": ["https://tamperz.vercel.app"]}},
-        supports_credentials=True,
-    )
+    app,
+    resources={r"/*": {"origins": [
+        "http://localhost:5173",
+        "https://tamperz.vercel.app"
+    ]}},
+    supports_credentials=True
+)
 
     @app.route("/api/health", methods=["GET"])
     def health():
@@ -107,13 +110,10 @@ app = create_app()
 socketio = SocketIO(
     app,
     cors_allowed_origins=[
-        "https://tamperz.vercel.app",
+        "http://localhost:5173",
+        "https://tamperz.vercel.app"
     ],
-    async_mode="eventlet",
-    logger=True,
-    engineio_logger=True,
-    ping_timeout=60,
-    ping_interval=25,
+    async_mode="eventlet"
 )
 
 # ✅ CORRECT PLACE FOR SOCKET HANDLER
@@ -158,5 +158,5 @@ eventlet.spawn(start_background)
 # =========================
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
+    port = int(os.environ.get("PORT", 5001))
     socketio.run(app, host="0.0.0.0", port=port)

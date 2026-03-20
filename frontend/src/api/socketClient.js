@@ -1,31 +1,18 @@
 import { io } from "socket.io-client";
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+// ✅ LOCAL TEST URL
+const BASE_URL = "http://localhost:5001";
 
-let socketInstance = null;
+console.log("🚀 Connecting to:", BASE_URL);
 
-const createSocket = () => {
-  const socket = io(API_BASE_URL, {
-    transports: ["polling", "websocket"],
-    reconnection: true,
-    reconnectionAttempts: 20,
-    reconnectionDelay: 2000,
-    timeout: 20000,
-  });
+const socket = io(BASE_URL, {
+  path: "/socket.io",
+  transports: ["websocket"],
+});
 
-  socket.onAny((event, ...args) => {
-    console.log("EVENT:", event, args);
-  });
+// 🔥 DEBUG (important)
+socket.onAny((event, data) => {
+  console.log("📡 EVENT:", event, data);
+});
 
-  return socket;
-};
-
-const getSocket = () => {
-  if (!socketInstance) {
-    socketInstance = createSocket();
-  }
-  return socketInstance;
-};
-
-export default getSocket();
+export default socket;

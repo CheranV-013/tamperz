@@ -9,6 +9,7 @@ import SensorCharts from "../components/SensorCharts.jsx";
 import apiClient from "../api/apiClient.js";
 import socket from "../api/socketClient.js";
 
+// ✅ time formatter
 const formatTime = (iso) => {
   if (!iso) return "--";
   const date = new Date(iso);
@@ -20,6 +21,7 @@ const Dashboard = () => {
   const [sensorData, setSensorData] = useState([]);
   const [connected, setConnected] = useState(false);
 
+  // ✅ Load initial alerts
   useEffect(() => {
     const loadAlerts = async () => {
       try {
@@ -27,19 +29,33 @@ const Dashboard = () => {
         const items = response.data.alerts || [];
         setAlerts(items);
       } catch (error) {
-        console.error("Failed to fetch alerts", error);
+        console.error("❌ Failed to fetch alerts", error);
       }
     };
 
     loadAlerts();
   }, []);
 
+  // ✅ SOCKET HANDLING (CLEAN + SAFE)
   useEffect(() => {
-    socket.on("connect", () => setConnected(true));
-    socket.on("disconnect", () => setConnected(false));
+    if (!socket) return;
 
-    socket.on("sensor_data", (payload) => {
-      console.log("DATA RECEIVED", payload);
+    console.log("🔌 Initializing socket listeners...");
+
+    // connection
+    const onConnect = () => {
+      console.log("✅ SOCKET CONNECTED:", socket.id);
+      setConnected(true);
+    };
+
+    const onDisconnect = () => {
+      console.log("❌ SOCKET DISCONNECTED");
+      setConnected(false);
+    };
+
+    // sensor data
+    const onSensorData = (payload) => {
+      console.log("🔥 DATA RECEIVED:", payload);
 
       setSensorData((prev) => {
         const next = [
@@ -55,22 +71,42 @@ const Dashboard = () => {
             battery_voltage: payload.battery_voltage,
           },
         ];
-        return next.slice(-50);
+
+        return next.slice(-50); // keep last 50
       });
-    });
+    };
 
-    socket.on("tamper_alert", (alert) => {
+    // alerts
+    const onAlert = (alert) => {
+      console.log("🚨 ALERT RECEIVED:", alert);
+
       setAlerts((prev) => [alert, ...prev].slice(0, 50));
+    };
+
+    // attach listeners
+    socket.on("connect", onConnect);
+    socket.on("disconnect", onDisconnect);
+    socket.on("sensor_data", onSensorData);
+    socket.on("tamper_alert", onAlert);
+
+    // debug all events
+    socket.onAny((event, data) => {
+      console.log("📡 EVENT:", event, data);
     });
 
+    // cleanup
     return () => {
-      socket.off("connect");
-      socket.off("disconnect");
-      socket.off("sensor_data");
-      socket.off("tamper_alert");
+      console.log("🧹 Cleaning socket listeners...");
+
+      socket.off("connect", onConnect);
+      socket.off("disconnect", onDisconnect);
+      socket.off("sensor_data", onSensorData);
+      socket.off("tamper_alert", onAlert);
+      socket.offAny();
     };
   }, []);
 
+  // ✅ Container cards logic
   const containerCards = useMemo(() => {
     const ids = ["C101", "C102", "C103"];
 
@@ -81,12 +117,21 @@ const Dashboard = () => {
 
       return {
         id,
-        status: alerts.length > 0 && id === "C101" ? "critical" : "normal",
+        status:
+          alerts.length > 0 && id === "C101" ? "critical" : "normal",
         lastUpdate: latest ? latest.timestamp : "--",
-        temperature: latest ? latest.temperature.toFixed(1) : "--",
-        humidity: latest ? Math.round(latest.humidity) : "--",
-        vibration: latest ? latest.vibration.toFixed(2) : "--",
-        battery: latest ? latest.battery_voltage?.toFixed(2) : "--",
+        temperature: latest
+          ? Number(latest.temperature).toFixed(1)
+          : "--",
+        humidity: latest
+          ? Math.round(latest.humidity)
+          : "--",
+        vibration: latest
+          ? Number(latest.vibration).toFixed(2)
+          : "--",
+        battery: latest?.battery_voltage
+          ? Number(latest.battery_voltage).toFixed(2)
+          : "--",
       };
     });
   }, [sensorData, alerts]);
@@ -95,8 +140,10 @@ const Dashboard = () => {
     <div className="min-h-screen bg-slate-50 px-6 pb-10">
       <div className="max-w-6xl mx-auto">
         <Navbar />
+
         <div className="space-y-6">
           <SOCHeader connected={connected} />
+
           <ContainerStatus containers={containerCards} />
 
           <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-6">
