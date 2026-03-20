@@ -7,7 +7,12 @@ import AlertPanel from "../components/AlertPanel.jsx";
 import SensorCharts from "../components/SensorCharts.jsx";
 
 import apiClient from "../api/apiClient.js";
-import socket from "../api/socketClient.js";
+import { io } from "socket.io-client";
+
+const socket = io("https://ai-iot-tamper-backend.onrender.com", {
+  path: "/socket.io",
+  transports: ["websocket"],
+});
 
 // ✅ ADD THIS (missing function)
 const formatTime = (iso) => {
@@ -35,6 +40,12 @@ const Dashboard = () => {
 
     loadAlerts();
   }, []);
+
+
+  socket.onAny((event, data) => {
+  console.log("🔥 FRONTEND EVENT:", event, data);
+});
+
 
   useEffect(() => {
     socket.on("connect", () => {
