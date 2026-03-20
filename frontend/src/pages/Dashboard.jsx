@@ -7,14 +7,9 @@ import AlertPanel from "../components/AlertPanel.jsx";
 import SensorCharts from "../components/SensorCharts.jsx";
 
 import apiClient from "../api/apiClient.js";
-import { io } from "socket.io-client";
+import socket from "../api/socketClient.js"; // ✅ ONLY ONE SOCKET SOURCE
 
-const socket = io("https://ai-iot-tamper-backend.onrender.com", {
-  path: "/socket.io",
-  transports: ["websocket"],
-});
-
-// ✅ ADD THIS (missing function)
+// ✅ format helper
 const formatTime = (iso) => {
   if (!iso) return "--";
   const date = new Date(iso);
@@ -26,8 +21,8 @@ const Dashboard = () => {
   const [sensorData, setSensorData] = useState([]);
   const [connected, setConnected] = useState(false);
 
+  // ✅ Load alerts once
   useEffect(() => {
-    window.socket = socket;
     const loadAlerts = async () => {
       try {
         const response = await apiClient.get("/api/alerts");
@@ -41,57 +36,62 @@ const Dashboard = () => {
     loadAlerts();
   }, []);
 
-
-  socket.onAny((event, data) => {
-  console.log("🔥 FRONTEND EVENT:", event, data);
-});
-
-
+  // ✅ SOCKET LISTENERS (ONLY ONCE)
   useEffect(() => {
-  if (!socket) return;
+    if (!socket) return;
 
-  socket.on("connect", () => {
-    console.log("✅ CONNECTED:", socket.id);
-    setConnected(true);
-  });
+    console.log("🔌 Initializing socket listeners...");
 
-  socket.on("disconnect", () => {
-    console.log("❌ DISCONNECTED");
-    setConnected(false);
-  });
-
-  socket.on("sensor_data", (payload) => {
-    console.log("🔥 DATA RECEIVED:", payload);
-
-    setSensorData((prev) => {
-      const next = [
-        ...prev,
-        {
-          container_id: payload.container_id,
-          timestamp: formatTime(payload.timestamp),
-          temperature: payload.temperature,
-          humidity: payload.humidity,
-          vibration: payload.vibration,
-          anomaly: payload.vibration > 0.6 ? payload.vibration : null,
-        },
-      ];
-      return next.slice(-50);
+    socket.on("connect", () => {
+      console.log("✅ CONNECTED:", socket.id);
+      setConnected(true);
     });
-  });
 
-  socket.on("tamper_alert", (alert) => {
-    console.log("🚨 ALERT RECEIVED:", alert);
-    setAlerts((prev) => [alert, ...prev].slice(0, 50));
-  });
+    socket.on("disconnect", () => {
+      console.log("❌ DISCONNECTED");
+      setConnected(false);
+    });
 
-  return () => {
-    socket.off("connect");
-    socket.off("disconnect");
-    socket.off("sensor_data");
-    socket.off("tamper_alert");
-  };
-}, []);
+    socket.on("sensor_data", (payload) => {
+      console.log("🔥 DATA RECEIVED:", payload);
 
+      setSensorData((prev) => {
+        const next = [
+          ...prev,
+          {
+            container_id: payload.container_id,
+            timestamp: formatTime(payload.timestamp),
+            temperature: payload.temperature,
+            humidity: payload.humidity,
+            vibration: payload.vibration,
+            anomaly: payload.vibration > 0.6 ? payload.vibration : null,
+          },
+        ];
+        return next.slice(-50);
+      });
+    });
+
+    socket.on("tamper_alert", (alert) => {
+      console.log("🚨 ALERT RECEIVED:", alert);
+      setAlerts((prev) => [alert, ...prev].slice(0, 50));
+    });
+
+    // ✅ GLOBAL DEBUG
+    socket.onAny((event, data) => {
+      console.log("📡 EVENT:", event, data);
+    });
+
+    // ✅ CLEANUP
+    return () => {
+      socket.off("connect");
+      socket.off("disconnect");
+      socket.off("sensor_data");
+      socket.off("tamper_alert");
+      socket.offAny();
+    };
+  }, []);
+
+  // ✅ Container UI mapping
   const containerCards = useMemo(() => {
     const ids = ["C101", "C102", "C103"];
 

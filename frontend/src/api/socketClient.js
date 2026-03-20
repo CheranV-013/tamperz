@@ -5,7 +5,10 @@ const socket = io("https://ai-iot-tamper-backend.onrender.com", {
   transports: ["websocket"],
 });
 
-// 🔥 DEBUG (GLOBAL)
+// make global
+window.socket = socket;
+
+// debug (optional)
 socket.onAny((event, data) => {
   console.log("🔥 GLOBAL EVENT:", event, data);
 });
