@@ -70,9 +70,16 @@ def get_location(ip):
         return {}
 
 
-@app.route("/api/health", methods=["GET"])
-def health():
-    return jsonify({"status": "ok"}), 200
+@app.route("/api/sensor", methods=["POST"])
+def receive_sensor():
+    data = request.json
+
+    print("📡 SENSOR DATA:", data, flush=True)
+
+    # 🔥 emit to dashboard
+    socketio.emit("sensor_data", data)
+
+    return {"status": "received"}, 200
 
 
 @app.route("/", methods=["GET"])
