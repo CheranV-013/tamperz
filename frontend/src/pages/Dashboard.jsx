@@ -54,27 +54,25 @@ const Dashboard = () => {
     };
 
     // sensor data
-    const onSensorData = (payload) => {
-      console.log("🔥 DATA RECEIVED:", payload);
+    socket.on("sensor_data", (payload) => {
+  console.log("🔥 DATA RECEIVED:", payload);
 
-      setSensorData((prev) => {
-        const next = [
-          ...prev,
-          {
-            container_id: payload.container_id,
-            timestamp: formatTime(payload.timestamp),
-            temperature: payload.temperature,
-            humidity: payload.humidity,
-            vibration: payload.vibration,
-            door_status: payload.door_status,
-            gps_shift: payload.gps_shift,
-            battery_voltage: payload.battery_voltage,
-          },
-        ];
+  setSensorData((prev) => {
+    const next = [
+      ...prev,
+      {
+        container_id: payload.container_id,
+        timestamp: new Date(payload.timestamp).toLocaleTimeString(),
+        temperature: payload.temperature,
+        humidity: payload.humidity,
+        vibration: payload.vibration,
+        battery_voltage: payload.battery_voltage,
+      },
+    ];
 
-        return next.slice(-50); // keep last 50
-      });
-    };
+    return next.slice(-50);
+  });
+});
 
     // alerts
     const onAlert = (alert) => {
