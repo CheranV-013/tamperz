@@ -20,7 +20,7 @@ from user_agents import parse
 
 
 # =========================
-# 🔥 ACCESS TRACKING HELPERS
+# 🔥 ACCESS HELPERS
 # =========================
 
 def get_client_ip():
@@ -48,65 +48,20 @@ def get_location(ip):
 # 🚀 CREATE APP
 # =========================
 
-def create_app():
-    app = Flask(__name__)
-    app.config["SECRET_KEY"] = SECRET_KEY
+app = Flask(__name__)
+app.config["SECRET_KEY"] = SECRET_KEY
 
-    socketio = SocketIO(
+# ✅ FIX 1: Proper Flask CORS
+CORS(
     app,
-    cors_allowed_origins=[
+    origins=[
         "http://localhost:5173",
         "https://tamperz.vercel.app"
     ],
-    async_mode="eventlet"
+    supports_credentials=True
 )
 
-    @app.route("/api/health", methods=["GET"])
-    def health():
-        return jsonify({"status": "ok"}), 200
-
-    @app.route("/", methods=["GET"])
-    def home():
-        return jsonify({
-            "service": "AI IoT Tamper Detection API",
-            "status": "running"
-        })
-
-    @app.route("/api/access-log", methods=["GET"])
-    def access_log():
-        ip = get_client_ip()
-        ua_string = request.headers.get("User-Agent")
-
-        ua = parse(ua_string)
-
-        device_info = {
-            "browser": ua.browser.family,
-            "os": ua.os.family,
-            "device": "Mobile" if ua.is_mobile else "Desktop"
-        }
-
-        location = get_location(ip)
-
-        log = {
-            "ip": ip,
-            "location": location,
-            "device_info": device_info,
-            "timestamp": datetime.utcnow().isoformat()
-        }
-
-        print("🚨 ACCESS LOG:", log)
-
-        return jsonify(log)
-
-    return app
-
-
-# =========================
-# ⚙️ INITIALIZE APP
-# =========================
-
-app = create_app()
-
+# ✅ FIX 2: Single SocketIO instance
 socketio = SocketIO(
     app,
     cors_allowed_origins=[
@@ -116,10 +71,58 @@ socketio = SocketIO(
     async_mode="eventlet"
 )
 
-# ✅ CORRECT PLACE FOR SOCKET HANDLER
+
+# =========================
+# 🌐 ROUTES
+# =========================
+
+@app.route("/api/health", methods=["GET"])
+def health():
+    return jsonify({"status": "ok"}), 200
+
+
+@app.route("/", methods=["GET"])
+def home():
+    return jsonify({
+        "service": "AI IoT Tamper Detection API",
+        "status": "running"
+    })
+
+
+@app.route("/api/access-log", methods=["GET"])
+def access_log():
+    ip = get_client_ip()
+    ua_string = request.headers.get("User-Agent")
+
+    ua = parse(ua_string)
+
+    device_info = {
+        "browser": ua.browser.family,
+        "os": ua.os.family,
+        "device": "Mobile" if ua.is_mobile else "Desktop"
+    }
+
+    location = get_location(ip)
+
+    log = {
+        "ip": ip,
+        "location": location,
+        "device_info": device_info,
+        "timestamp": datetime.utcnow().isoformat()
+    }
+
+    print("🚨 ACCESS LOG:", log)
+
+    return jsonify(log)
+
+
+# =========================
+# 🔌 SOCKET EVENTS
+# =========================
+
 @socketio.on("connect")
 def handle_connect():
-    print("✅ CLIENT CONNECTED TO BACKEND", flush=True)
+    print("✅ CLIENT CONNECTED", flush=True)
 
 
 # =========================
@@ -131,32 +134,24 @@ init_db()
 anomaly_service = AnomalyService(socketio)
 simulator = SensorSimulator(anomaly_service, socketio)
 
+
+# =========================
+# 🤖 START SIMULATOR (ONLY ONCE)
+# =========================
+
 def start_background():
+    print("🔥 Starting simulator...", flush=True)
     simulator.run()
 
 eventlet.spawn(start_background)
 
+
+# =========================
+# 🔗 REGISTER ROUTES
+# =========================
+
 app.register_blueprint(register_sensor_routes(anomaly_service))
 app.register_blueprint(alert_bp)
-
-
-# =========================
-# 🤖 SENSOR SIMULATOR
-# =========================
-
-simulator = SensorSimulator(anomaly_service, socketio, interval=3)
-
-
-# =========================
-# 🤖 START SIMULATOR
-# =========================
-
-def start_background():
-    print("🔥 Starting simulator thread...", flush=True)
-    socketio.start_background_task(simulator.run)
-
-# ✅ USE EVENTLET (NOT threading)
-eventlet.spawn(start_background)
 
 
 # =========================
