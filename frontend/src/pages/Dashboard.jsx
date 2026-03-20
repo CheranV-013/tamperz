@@ -48,57 +48,49 @@ const Dashboard = () => {
 
 
   useEffect(() => {
-    socket.on("connect", () => {
-      console.log("✅ CONNECTED:", socket.id);
-      setConnected(true);
+  if (!socket) return;
+
+  socket.on("connect", () => {
+    console.log("✅ CONNECTED:", socket.id);
+    setConnected(true);
+  });
+
+  socket.on("disconnect", () => {
+    console.log("❌ DISCONNECTED");
+    setConnected(false);
+  });
+
+  socket.on("sensor_data", (payload) => {
+    console.log("🔥 DATA RECEIVED:", payload);
+
+    setSensorData((prev) => {
+      const next = [
+        ...prev,
+        {
+          container_id: payload.container_id,
+          timestamp: formatTime(payload.timestamp),
+          temperature: payload.temperature,
+          humidity: payload.humidity,
+          vibration: payload.vibration,
+          anomaly: payload.vibration > 0.6 ? payload.vibration : null,
+        },
+      ];
+      return next.slice(-50);
     });
+  });
 
-    socket.onAny((event, ...args) => {
-  console.log("📡 EVENT:", event, args);
-});
+  socket.on("tamper_alert", (alert) => {
+    console.log("🚨 ALERT RECEIVED:", alert);
+    setAlerts((prev) => [alert, ...prev].slice(0, 50));
+  });
 
-    socket.on("disconnect", () => setConnected(false));
-
-    socket.on("tamper_alert", (alert) => {
-      console.log("🚨 ALERT:", alert);
-      setAlerts((prev) => [alert, ...prev].slice(0, 50));
-    });
-
-    socket.on("sensor_data", (payload) => {
-      console.log("🔥 DATA:", payload);
-
-      setSensorData((prev) => {
-        const anomalyFlag =
-          payload.door_status === 1 ||
-          payload.vibration > 0.6 ||
-          payload.gps_shift > 0.6 ||
-          payload.battery_voltage < 3.2 ||
-          payload.temperature > 40 ||
-          payload.temperature < 10;
-
-        const next = [
-          ...prev,
-          {
-            container_id: payload.container_id,
-            timestamp: formatTime(payload.timestamp),
-            temperature: payload.temperature,
-            humidity: payload.humidity,
-            vibration: payload.vibration,
-            anomaly: anomalyFlag ? payload.vibration : null,
-          },
-        ];
-
-        return next.slice(-50);
-      });
-    });
-
-    return () => {
-      socket.off("connect");
-      socket.off("disconnect");
-      socket.off("tamper_alert");
-      socket.off("sensor_data");
-    };
-  }, []);
+  return () => {
+    socket.off("connect");
+    socket.off("disconnect");
+    socket.off("sensor_data");
+    socket.off("tamper_alert");
+  };
+}, []);
 
   const containerCards = useMemo(() => {
     const ids = ["C101", "C102", "C103"];
