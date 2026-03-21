@@ -76,8 +76,10 @@ def receive_sensor():
 
     print("📡 SENSOR DATA:", data, flush=True)
 
-    # 🔥 emit to dashboard
-    socketio.emit("sensor_data", data)
+    # 🔥 FIX: ensure proper socket emit
+    socketio.emit("sensor_data", data, namespace="/")
+
+    print("🚀 EMITTED TO SOCKET", flush=True)
 
     return {"status": "received"}, 200
 
