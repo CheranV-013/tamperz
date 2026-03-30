@@ -150,7 +150,10 @@ const Dashboard = () => {
     setGpsStreaming(true);
     const watchId = navigator.geolocation.watchPosition(
       async (pos) => {
-        const { latitude, longitude } = pos.coords;
+        const { latitude, longitude, accuracy } = pos.coords;
+        if (accuracy && accuracy > 50) {
+          return;
+        }
         setGpsPosition({ lat: latitude, lon: longitude });
         await fetch(`${API_BASE_URL}/api/container-location`, {
           method: "POST",
@@ -159,13 +162,14 @@ const Dashboard = () => {
             container_id: "C101",
             gps_lat: latitude,
             gps_lon: longitude,
+            accuracy,
           }),
         });
       },
       () => {
         setGpsStreaming(false);
       },
-      { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 }
+      { enableHighAccuracy: true, maximumAge: 0, timeout: 10000 }
     );
 
     gpsWatchIdRef.current = watchId;
