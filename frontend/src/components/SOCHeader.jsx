@@ -1,6 +1,6 @@
 const SOCHeader = ({ connected }) => {
   return (
-    <div className="flex items-center justify-between bg-white p-6 rounded-2xl shadow-card border border-slate-100">
+    <div className="flex items-center justify-between glass-panel p-6 rounded-2xl shadow-card border border-slate-100 hover-float">
       <div>
         <p className="text-sm uppercase tracking-[0.2em] text-slate-400">SOC Dashboard</p>
         <h1 className="text-2xl font-semibold text-slate-900">

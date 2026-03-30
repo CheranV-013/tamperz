@@ -28,6 +28,7 @@ const Dashboard = () => {
   const [tracking, setTracking] = useState(false);
   const [gpsPosition, setGpsPosition] = useState(null);
   const [gpsStreaming, setGpsStreaming] = useState(false);
+  const [selectedVisitor, setSelectedVisitor] = useState(null);
   const gpsWatchIdRef = useRef(null);
 
   useEffect(() => {
@@ -178,8 +179,11 @@ const Dashboard = () => {
     setGpsStreaming(false);
   };
 
+  const openVisitor = (visitor) => setSelectedVisitor(visitor);
+  const closeVisitor = () => setSelectedVisitor(null);
+
   return (
-    <div className="min-h-screen bg-slate-50 px-6 pb-10">
+    <div className="min-h-screen bg-transparent px-6 pb-10">
       <div className="max-w-6xl mx-auto">
         <Navbar />
 
@@ -188,9 +192,11 @@ const Dashboard = () => {
           <ContainerStatus containers={containerCards} />
 
           <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-6">
-            <SensorCharts data={sensorData} />
             <div className="space-y-6">
-              <div>
+              <SensorCharts data={sensorData} />
+            </div>
+            <div className="space-y-6">
+              <div className="fade-in">
                 <ContainerMap position={latestPosition} />
                 <div className="mt-3 flex items-center gap-2">
                   <button
@@ -208,13 +214,16 @@ const Dashboard = () => {
                     Stop GPS
                   </button>
                   {gpsStreaming && (
-                    <span className="text-xs text-emerald-600">Streaming</span>
+                    <span className="text-xs text-emerald-600 pulse-soft">Streaming</span>
                   )}
                 </div>
               </div>
-              <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-card">
+              <div className="glass-panel rounded-2xl p-5 border border-slate-100 shadow-card slide-up hover-float">
                 <div className="flex items-center justify-between">
-                  <h2 className="text-lg font-semibold text-slate-900">Live Visitors</h2>
+                  <div>
+                    <h2 className="text-lg font-semibold text-slate-900">Live Visitors</h2>
+                    <p className="text-xs text-slate-400">Accurate location when GPS is shared</p>
+                  </div>
                   <button
                     onClick={triggerTracking}
                     disabled={tracking}
@@ -223,38 +232,112 @@ const Dashboard = () => {
                     {tracking ? "Tracking..." : "Start Tracking"}
                   </button>
                 </div>
-                <div className="mt-4 space-y-3 max-h-[260px] overflow-auto">
+                <div className="mt-4 space-y-3 max-h-[320px] overflow-auto">
                   {visitorList.length === 0 && (
                     <div className="text-sm text-slate-500">No visitors tracked yet.</div>
                   )}
-                  {visitorList.map((visitor, index) => (
-                    <div
-                      key={`${visitor.ip}-${visitor.timestamp}-${index}`}
-                      className="border border-slate-100 rounded-xl p-3"
-                    >
-                      <div className="flex items-center justify-between">
-                        <p className="text-sm font-semibold text-slate-900">{visitor.ip}</p>
-                        <span className="text-xs text-slate-400">{visitor.timestamp}</span>
+                  {visitorList.map((visitor, index) => {
+                    const locationLabel = [
+                      visitor?.location?.city,
+                      visitor?.location?.country,
+                    ]
+                      .filter(Boolean)
+                      .join(", ");
+                    const hasCoords =
+                      visitor?.location?.lat && visitor?.location?.lon;
+
+                    return (
+                      <div
+                        key={`${visitor.ip}-${visitor.timestamp}-${index}`}
+                        className="border border-slate-100 rounded-xl p-3 bg-white/70 hover:bg-white transition hover-float"
+                      >
+                        <div className="flex items-center justify-between">
+                          <p className="text-sm font-semibold text-slate-900">{visitor.ip}</p>
+                          <span className="text-xs text-slate-400">{visitor.timestamp}</span>
+                        </div>
+                        <p className="text-xs text-slate-500 mt-1">
+                          {locationLabel || "Unknown location"}
+                        </p>
+                        <p className="text-xs text-slate-400 mt-1">
+                          {shortenBrowser(visitor.browser)}
+                        </p>
+                        <div className="mt-2 flex items-center gap-2">
+                          {hasCoords && (
+                            <button
+                              onClick={() => openVisitor(visitor)}
+                              className="text-xs px-2 py-1 rounded-full border border-slate-200 text-slate-600 hover:bg-slate-50"
+                            >
+                              View Location
+                            </button>
+                          )}
+                          {!hasCoords && (
+                            <span className="text-[11px] text-slate-400">
+                              GPS not shared
+                            </span>
+                          )}
+                        </div>
                       </div>
-                      <p className="text-xs text-slate-500 mt-1">
-                        {[
-                          visitor?.location?.city,
-                          visitor?.location?.country,
-                        ]
-                          .filter(Boolean)
-                          .join(", ") || "Unknown location"}
-                      </p>
-                      <p className="text-xs text-slate-400 mt-1">
-                        {shortenBrowser(visitor.browser)}
-                      </p>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             </div>
           </div>
         </div>
       </div>
+
+      {selectedVisitor && (
+        <div className="fixed inset-0 bg-slate-900/40 flex items-center justify-center z-50 fade-in">
+          <div className="bg-white rounded-2xl w-[92%] max-w-md p-6 shadow-card slide-up">
+            <div className="flex items-start justify-between">
+              <div>
+                <h3 className="text-lg font-semibold text-slate-900">Visitor Location</h3>
+                <p className="text-xs text-slate-400 mt-1">
+                  {selectedVisitor.ip}
+                </p>
+              </div>
+              <button
+                onClick={closeVisitor}
+                className="text-sm text-slate-500 hover:text-slate-700"
+              >
+                Close
+              </button>
+            </div>
+            <div className="mt-4 space-y-2 text-sm text-slate-600">
+              <p>
+                <span className="text-slate-500">Location:</span>{" "}
+                {[
+                  selectedVisitor?.location?.city,
+                  selectedVisitor?.location?.country,
+                ]
+                  .filter(Boolean)
+                  .join(", ") || "Unknown"}
+              </p>
+              <p>
+                <span className="text-slate-500">Coordinates:</span>{" "}
+                {selectedVisitor?.location?.lat}, {selectedVisitor?.location?.lon}
+              </p>
+              {selectedVisitor?.location?.accuracy && (
+                <p>
+                  <span className="text-slate-500">Accuracy:</span>{" "}
+                  {Math.round(selectedVisitor.location.accuracy)} meters
+                </p>
+              )}
+            </div>
+            {selectedVisitor?.location?.lat && selectedVisitor?.location?.lon && (
+              <button
+                onClick={() => {
+                  const { lat, lon } = selectedVisitor.location;
+                  window.open(`https://maps.google.com/?q=${lat},${lon}`, "_blank");
+                }}
+                className="mt-4 w-full text-sm px-3 py-2 rounded-lg bg-slate-900 text-white hover:bg-slate-800"
+              >
+                Open in Google Maps
+              </button>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

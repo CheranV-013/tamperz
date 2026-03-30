@@ -23,7 +23,7 @@ const ContainerMap = ({ position }) => {
   }, [position]);
 
   return (
-    <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-card">
+    <div className="glass-panel rounded-2xl p-5 border border-slate-100 shadow-card hover-float">
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold text-slate-900">Container C101 Location</h2>
         <span className="text-xs text-slate-400">Live GPS</span>
