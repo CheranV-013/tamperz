@@ -169,6 +169,13 @@ const Dashboard = () => {
     return () => navigator.geolocation.clearWatch(watchId);
   };
 
+  useEffect(() => {
+    const stop = startGpsStream();
+    return () => {
+      if (typeof stop === "function") stop();
+    };
+  }, []);
+
   return (
     <div className="min-h-screen bg-slate-50 px-6 pb-10">
       <div className="max-w-6xl mx-auto">
@@ -183,12 +190,6 @@ const Dashboard = () => {
             <div className="space-y-6">
               <div>
                 <ContainerMap position={latestPosition} />
-                <button
-                  onClick={startGpsStream}
-                  className="mt-3 text-xs px-3 py-1 rounded-full border border-slate-200 text-slate-600 hover:bg-slate-50"
-                >
-                  {gpsStreaming ? "GPS Streaming On" : "Start GPS Streaming"}
-                </button>
               </div>
               <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-card">
                 <div className="flex items-center justify-between">
