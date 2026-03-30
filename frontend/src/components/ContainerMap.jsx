@@ -11,17 +11,22 @@ const ContainerMap = ({ position }) => {
 
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) return;
+    if (!MAPBOX_TOKEN) return;
 
-    mapboxgl.accessToken = MAPBOX_TOKEN;
+    try {
+      mapboxgl.accessToken = MAPBOX_TOKEN;
 
-    mapRef.current = new mapboxgl.Map({
-      container: mapContainerRef.current,
-      style: "mapbox://styles/mapbox/light-v11",
-      center: [78.9629, 20.5937],
-      zoom: 3.5,
-    });
+      mapRef.current = new mapboxgl.Map({
+        container: mapContainerRef.current,
+        style: "mapbox://styles/mapbox/light-v11",
+        center: [78.9629, 20.5937],
+        zoom: 3.5,
+      });
 
-    mapRef.current.addControl(new mapboxgl.NavigationControl(), "top-right");
+      mapRef.current.addControl(new mapboxgl.NavigationControl(), "top-right");
+    } catch (err) {
+      console.error("Mapbox init failed", err);
+    }
   }, []);
 
   useEffect(() => {
@@ -48,7 +53,13 @@ const ContainerMap = ({ position }) => {
         <span className="text-xs text-slate-400">Live GPS</span>
       </div>
       <div className="mt-4 h-[260px] rounded-xl overflow-hidden border border-slate-100">
-        <div ref={mapContainerRef} className="h-full w-full" />
+        {MAPBOX_TOKEN ? (
+          <div ref={mapContainerRef} className="h-full w-full" />
+        ) : (
+          <div className="h-full w-full flex items-center justify-center text-sm text-slate-500">
+            Mapbox token missing. Set `VITE_MAPBOX_TOKEN`.
+          </div>
+        )}
       </div>
       {!position && (
         <p className="text-xs text-slate-500 mt-3">
