@@ -1,49 +1,25 @@
-import { useEffect, useRef } from "react";
-import mapboxgl from "mapbox-gl";
-import "mapbox-gl/dist/mapbox-gl.css";
+import { useMemo } from "react";
+import { GoogleMap, Marker, useLoadScript } from "@react-google-maps/api";
 
-const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN || "";
+const GOOGLE_MAPS_KEY = import.meta.env.VITE_GOOGLE_MAPS_KEY || "";
+
+const containerStyle = {
+  width: "100%",
+  height: "260px",
+};
+
+const defaultCenter = { lat: 20.5937, lng: 78.9629 };
 
 const ContainerMap = ({ position }) => {
-  const mapContainerRef = useRef(null);
-  const mapRef = useRef(null);
-  const markerRef = useRef(null);
+  const { isLoaded } = useLoadScript({
+    googleMapsApiKey: GOOGLE_MAPS_KEY,
+  });
 
-  useEffect(() => {
-    if (!mapContainerRef.current || mapRef.current) return;
-    if (!MAPBOX_TOKEN) return;
-
-    try {
-      mapboxgl.accessToken = MAPBOX_TOKEN;
-
-      mapRef.current = new mapboxgl.Map({
-        container: mapContainerRef.current,
-        style: "mapbox://styles/mapbox/light-v11",
-        center: [78.9629, 20.5937],
-        zoom: 3.5,
-      });
-
-      mapRef.current.addControl(new mapboxgl.NavigationControl(), "top-right");
-    } catch (err) {
-      console.error("Mapbox init failed", err);
+  const center = useMemo(() => {
+    if (position?.lat && position?.lon) {
+      return { lat: position.lat, lng: position.lon };
     }
-  }, []);
-
-  useEffect(() => {
-    if (!mapRef.current || !position) return;
-
-    const { lat, lon } = position;
-    const lngLat = [lon, lat];
-
-    if (!markerRef.current) {
-      markerRef.current = new mapboxgl.Marker({ color: "#0f172a" })
-        .setLngLat(lngLat)
-        .addTo(mapRef.current);
-    } else {
-      markerRef.current.setLngLat(lngLat);
-    }
-
-    mapRef.current.easeTo({ center: lngLat, zoom: 7 });
+    return defaultCenter;
   }, [position]);
 
   return (
@@ -52,13 +28,23 @@ const ContainerMap = ({ position }) => {
         <h2 className="text-lg font-semibold text-slate-900">Container C101 Location</h2>
         <span className="text-xs text-slate-400">Live GPS</span>
       </div>
-      <div className="mt-4 h-[260px] rounded-xl overflow-hidden border border-slate-100">
-        {MAPBOX_TOKEN ? (
-          <div ref={mapContainerRef} className="h-full w-full" />
-        ) : (
-          <div className="h-full w-full flex items-center justify-center text-sm text-slate-500">
-            Mapbox token missing. Set `VITE_MAPBOX_TOKEN`.
+      <div className="mt-4 rounded-xl overflow-hidden border border-slate-100">
+        {!GOOGLE_MAPS_KEY && (
+          <div className="h-[260px] flex items-center justify-center text-sm text-slate-500">
+            Google Maps key missing. Set `VITE_GOOGLE_MAPS_KEY`.
           </div>
+        )}
+        {GOOGLE_MAPS_KEY && !isLoaded && (
+          <div className="h-[260px] flex items-center justify-center text-sm text-slate-500">
+            Loading map...
+          </div>
+        )}
+        {GOOGLE_MAPS_KEY && isLoaded && (
+          <GoogleMap mapContainerStyle={containerStyle} center={center} zoom={position ? 7 : 3.5}>
+            {position?.lat && position?.lon && (
+              <Marker position={{ lat: position.lat, lng: position.lon }} />
+            )}
+          </GoogleMap>
         )}
       </div>
       {!position && (
