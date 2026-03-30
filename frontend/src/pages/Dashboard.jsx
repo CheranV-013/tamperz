@@ -4,6 +4,7 @@ import Navbar from "../components/Navbar.jsx";
 import SOCHeader from "../components/SOCHeader.jsx";
 import ContainerStatus from "../components/ContainerStatus.jsx";
 import SensorCharts from "../components/SensorCharts.jsx";
+import ContainerMap from "../components/ContainerMap.jsx";
 
 import socket from "../api/socketClient.js";
 import { API_BASE_URL } from "../api/apiClient.js";
@@ -43,6 +44,8 @@ const Dashboard = () => {
             humidity: payload.humidity,
             vibration: payload.vibration,
             battery_voltage: payload.battery_voltage,
+            gps_lat: payload.gps_lat,
+            gps_lon: payload.gps_lon,
           },
         ];
         return next.slice(-50);
@@ -114,6 +117,16 @@ const Dashboard = () => {
 
   const visitorList = useMemo(() => visitors.slice(0, 10), [visitors]);
 
+  const latestPosition = useMemo(() => {
+    for (let i = sensorData.length - 1; i >= 0; i -= 1) {
+      const item = sensorData[i];
+      if (item?.gps_lat && item?.gps_lon) {
+        return { lat: item.gps_lat, lon: item.gps_lon };
+      }
+    }
+    return null;
+  }, [sensorData]);
+
   return (
     <div className="min-h-screen bg-slate-50 px-6 pb-10">
       <div className="max-w-6xl mx-auto">
@@ -125,43 +138,46 @@ const Dashboard = () => {
 
           <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-6">
             <SensorCharts data={sensorData} />
-            <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-card">
-              <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-slate-900">Live Visitors</h2>
-                <button
-                  onClick={triggerTracking}
-                  disabled={tracking}
-                  className="text-xs px-3 py-1 rounded-full border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-60"
-                >
-                  {tracking ? "Tracking..." : "Start Tracking"}
-                </button>
-              </div>
-              <div className="mt-4 space-y-3 max-h-[260px] overflow-auto">
-                {visitorList.length === 0 && (
-                  <div className="text-sm text-slate-500">No visitors tracked yet.</div>
-                )}
-                {visitorList.map((visitor, index) => (
-                  <div
-                    key={`${visitor.ip}-${visitor.timestamp}-${index}`}
-                    className="border border-slate-100 rounded-xl p-3"
+            <div className="space-y-6">
+              <ContainerMap position={latestPosition} />
+              <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-card">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-lg font-semibold text-slate-900">Live Visitors</h2>
+                  <button
+                    onClick={triggerTracking}
+                    disabled={tracking}
+                    className="text-xs px-3 py-1 rounded-full border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-60"
                   >
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm font-semibold text-slate-900">{visitor.ip}</p>
-                      <span className="text-xs text-slate-400">{visitor.timestamp}</span>
+                    {tracking ? "Tracking..." : "Start Tracking"}
+                  </button>
+                </div>
+                <div className="mt-4 space-y-3 max-h-[260px] overflow-auto">
+                  {visitorList.length === 0 && (
+                    <div className="text-sm text-slate-500">No visitors tracked yet.</div>
+                  )}
+                  {visitorList.map((visitor, index) => (
+                    <div
+                      key={`${visitor.ip}-${visitor.timestamp}-${index}`}
+                      className="border border-slate-100 rounded-xl p-3"
+                    >
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm font-semibold text-slate-900">{visitor.ip}</p>
+                        <span className="text-xs text-slate-400">{visitor.timestamp}</span>
+                      </div>
+                      <p className="text-xs text-slate-500 mt-1">
+                        {[
+                          visitor?.location?.city,
+                          visitor?.location?.country,
+                        ]
+                          .filter(Boolean)
+                          .join(", ") || "Unknown location"}
+                      </p>
+                      <p className="text-xs text-slate-400 mt-1">
+                        {shortenBrowser(visitor.browser)}
+                      </p>
                     </div>
-                    <p className="text-xs text-slate-500 mt-1">
-                      {[
-                        visitor?.location?.city,
-                        visitor?.location?.country,
-                      ]
-                        .filter(Boolean)
-                        .join(", ") || "Unknown location"}
-                    </p>
-                    <p className="text-xs text-slate-400 mt-1">
-                      {shortenBrowser(visitor.browser)}
-                    </p>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             </div>
           </div>
