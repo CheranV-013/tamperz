@@ -16,7 +16,6 @@ from flask_cors import CORS
 from config.settings import SECRET_KEY
 from database.db import init_db
 from services.anomaly_service import AnomalyService
-from services.sensor_simulator import SensorSimulator
 from routes.sensor_routes import register_sensor_routes
 from routes.alert_routes import alert_bp
 
@@ -126,8 +125,7 @@ app.register_blueprint(register_sensor_routes(anomaly_service))
 app.register_blueprint(alert_bp)
 
 
-simulator = SensorSimulator(anomaly_service, socketio, interval=3)
-socketio.start_background_task(simulator.run)
+# Simulator disabled for real IoT device data
 
 
 if __name__ == "__main__":

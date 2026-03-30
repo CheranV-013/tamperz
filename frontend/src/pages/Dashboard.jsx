@@ -52,14 +52,11 @@ const Dashboard = () => {
   }, []);
 
   const containerCards = useMemo(() => {
-    const ids = ["C101", "C102", "C103"];
+    const latest = sensorData[sensorData.length - 1];
+    const id = latest?.container_id || "C101";
 
-    return ids.map((id) => {
-      const latest = [...sensorData]
-        .reverse()
-        .find((item) => item.container_id === id);
-
-      return {
+    return [
+      {
         id,
         status: "normal",
         lastUpdate: latest ? latest.timestamp : "--",
@@ -69,8 +66,8 @@ const Dashboard = () => {
         battery: latest?.battery_voltage
           ? Number(latest.battery_voltage).toFixed(2)
           : "--",
-      };
-    });
+      },
+    ];
   }, [sensorData]);
 
   return (

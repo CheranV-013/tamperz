@@ -8,7 +8,8 @@ class SensorSimulator:
         self.anomaly_service = anomaly_service
         self.socketio = socketio
         self.interval = interval
-        self.container_ids = ["C101", "C102", "C103"]
+        # Single live IoT stream container
+        self.container_ids = ["C101"]
 
     def _generate_payload(self):
         tamper = random.random() < 0.08
