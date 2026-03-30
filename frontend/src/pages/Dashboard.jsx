@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import Navbar from "../components/Navbar.jsx";
 import SOCHeader from "../components/SOCHeader.jsx";
@@ -28,6 +28,7 @@ const Dashboard = () => {
   const [tracking, setTracking] = useState(false);
   const [gpsPosition, setGpsPosition] = useState(null);
   const [gpsStreaming, setGpsStreaming] = useState(false);
+  const gpsWatchIdRef = useRef(null);
 
   useEffect(() => {
     if (!socket) return;
@@ -166,15 +167,16 @@ const Dashboard = () => {
       { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 }
     );
 
-    return () => navigator.geolocation.clearWatch(watchId);
+    gpsWatchIdRef.current = watchId;
   };
 
-  useEffect(() => {
-    const stop = startGpsStream();
-    return () => {
-      if (typeof stop === "function") stop();
-    };
-  }, []);
+  const stopGpsStream = () => {
+    if (gpsWatchIdRef.current !== null) {
+      navigator.geolocation.clearWatch(gpsWatchIdRef.current);
+      gpsWatchIdRef.current = null;
+    }
+    setGpsStreaming(false);
+  };
 
   return (
     <div className="min-h-screen bg-slate-50 px-6 pb-10">
@@ -190,6 +192,25 @@ const Dashboard = () => {
             <div className="space-y-6">
               <div>
                 <ContainerMap position={latestPosition} />
+                <div className="mt-3 flex items-center gap-2">
+                  <button
+                    onClick={startGpsStream}
+                    disabled={gpsStreaming}
+                    className="text-xs px-3 py-1 rounded-full border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-60"
+                  >
+                    Start Container GPS
+                  </button>
+                  <button
+                    onClick={stopGpsStream}
+                    disabled={!gpsStreaming}
+                    className="text-xs px-3 py-1 rounded-full border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-60"
+                  >
+                    Stop GPS
+                  </button>
+                  {gpsStreaming && (
+                    <span className="text-xs text-emerald-600">Streaming</span>
+                  )}
+                </div>
               </div>
               <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-card">
                 <div className="flex items-center justify-between">
