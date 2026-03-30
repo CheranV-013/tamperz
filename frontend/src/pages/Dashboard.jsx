@@ -26,6 +26,8 @@ const Dashboard = () => {
   const [visitors, setVisitors] = useState([]);
   const [connected, setConnected] = useState(false);
   const [tracking, setTracking] = useState(false);
+  const [gpsPosition, setGpsPosition] = useState(null);
+  const [gpsStreaming, setGpsStreaming] = useState(false);
 
   useEffect(() => {
     if (!socket) return;
@@ -52,6 +54,12 @@ const Dashboard = () => {
       });
     };
 
+    const handleGpsUpdate = (payload) => {
+      if (payload?.gps_lat && payload?.gps_lon) {
+        setGpsPosition({ lat: payload.gps_lat, lon: payload.gps_lon });
+      }
+    };
+
     const handleVisitor = (data) => {
       setVisitors((prev) => [data, ...prev].slice(0, 50));
     };
@@ -59,12 +67,14 @@ const Dashboard = () => {
     socket.on("connect", handleConnect);
     socket.on("disconnect", handleDisconnect);
     socket.on("sensor_data", handleSensorData);
+    socket.on("gps_update", handleGpsUpdate);
     socket.on("visitor_update", handleVisitor);
 
     return () => {
       socket.off("connect", handleConnect);
       socket.off("disconnect", handleDisconnect);
       socket.off("sensor_data", handleSensorData);
+      socket.off("gps_update", handleGpsUpdate);
       socket.off("visitor_update", handleVisitor);
     };
   }, []);
@@ -118,6 +128,7 @@ const Dashboard = () => {
   const visitorList = useMemo(() => visitors.slice(0, 10), [visitors]);
 
   const latestPosition = useMemo(() => {
+    if (gpsPosition) return gpsPosition;
     for (let i = sensorData.length - 1; i >= 0; i -= 1) {
       const item = sensorData[i];
       if (item?.gps_lat && item?.gps_lon) {
@@ -125,7 +136,38 @@ const Dashboard = () => {
       }
     }
     return null;
-  }, [sensorData]);
+  }, [sensorData, gpsPosition]);
+
+  const startGpsStream = () => {
+    if (!navigator.geolocation) {
+      alert("Geolocation not supported in this browser.");
+      return;
+    }
+    if (gpsStreaming) return;
+
+    setGpsStreaming(true);
+    const watchId = navigator.geolocation.watchPosition(
+      async (pos) => {
+        const { latitude, longitude } = pos.coords;
+        setGpsPosition({ lat: latitude, lon: longitude });
+        await fetch(`${API_BASE_URL}/api/container-location`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            container_id: "C101",
+            gps_lat: latitude,
+            gps_lon: longitude,
+          }),
+        });
+      },
+      () => {
+        setGpsStreaming(false);
+      },
+      { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 }
+    );
+
+    return () => navigator.geolocation.clearWatch(watchId);
+  };
 
   return (
     <div className="min-h-screen bg-slate-50 px-6 pb-10">
@@ -139,7 +181,15 @@ const Dashboard = () => {
           <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-6">
             <SensorCharts data={sensorData} />
             <div className="space-y-6">
-              <ContainerMap position={latestPosition} />
+              <div>
+                <ContainerMap position={latestPosition} />
+                <button
+                  onClick={startGpsStream}
+                  className="mt-3 text-xs px-3 py-1 rounded-full border border-slate-200 text-slate-600 hover:bg-slate-50"
+                >
+                  {gpsStreaming ? "GPS Streaming On" : "Start GPS Streaming"}
+                </button>
+              </div>
               <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-card">
                 <div className="flex items-center justify-between">
                   <h2 className="text-lg font-semibold text-slate-900">Live Visitors</h2>

@@ -18,6 +18,7 @@ from database.db import init_db
 from services.anomaly_service import AnomalyService
 from routes.sensor_routes import register_sensor_routes
 from routes.alert_routes import alert_bp
+from routes.location_routes import location_bp
 
 
 app = Flask(__name__)
@@ -123,6 +124,7 @@ init_db()
 anomaly_service = AnomalyService(socketio=socketio)
 app.register_blueprint(register_sensor_routes(anomaly_service))
 app.register_blueprint(alert_bp)
+app.register_blueprint(location_bp)
 
 
 # Simulator disabled for real IoT device data
