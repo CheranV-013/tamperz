@@ -1,20 +1,19 @@
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Dashboard from "./pages/Dashboard.jsx";
-import { useEffect } from "react";
+import Tracking from "./pages/Tracking.jsx";
+import AppShell from "./components/AppShell.jsx";
 
 const App = () => {
-  useEffect(() => {
-    const base = import.meta.env.VITE_API_BASE_URL;
-
-    console.log("🌐 API:", base);
-
-    // 🔥 CALL TRACK IMMEDIATELY (IMPORTANT)
-    fetch(`${base}/track`)
-      .then(() => console.log("✅ Visitor tracked"))
-      .catch(() => console.log("❌ Track failed"));
-
-  }, []);
-
-  return <Dashboard />;
+  return (
+    <BrowserRouter>
+      <AppShell>
+        <Routes>
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/tracking" element={<Tracking />} />
+        </Routes>
+      </AppShell>
+    </BrowserRouter>
+  );
 };
 
 export default App;
