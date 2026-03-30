@@ -69,7 +69,19 @@ const Dashboard = () => {
   const triggerTracking = async () => {
     try {
       setTracking(true);
-      await fetch(`${API_BASE_URL}/track`, { method: "GET" });
+      const gpsParams = await new Promise((resolve) => {
+        if (!navigator.geolocation) return resolve("");
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            const { latitude, longitude, accuracy } = pos.coords;
+            resolve(`?lat=${latitude}&lon=${longitude}&accuracy=${accuracy}`);
+          },
+          () => resolve(""),
+          { enableHighAccuracy: true, timeout: 5000 }
+        );
+      });
+
+      await fetch(`${API_BASE_URL}/track${gpsParams}`, { method: "GET" });
     } catch (err) {
       console.error("Tracking failed", err);
     } finally {
@@ -138,7 +150,12 @@ const Dashboard = () => {
                       <span className="text-xs text-slate-400">{visitor.timestamp}</span>
                     </div>
                     <p className="text-xs text-slate-500 mt-1">
-                      {visitor?.location?.country || "Unknown location"}
+                      {[
+                        visitor?.location?.city,
+                        visitor?.location?.country,
+                      ]
+                        .filter(Boolean)
+                        .join(", ") || "Unknown location"}
                     </p>
                     <p className="text-xs text-slate-400 mt-1">
                       {shortenBrowser(visitor.browser)}
