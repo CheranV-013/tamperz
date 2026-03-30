@@ -70,7 +70,7 @@ const Dashboard = () => {
   }, [sensorData]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 w-full">
       <SOCHeader connected={connected} />
       <ContainerStatus containers={containerCards} />
       <div className="panel p-5 hover-float">

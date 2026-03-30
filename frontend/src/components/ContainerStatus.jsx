@@ -6,11 +6,11 @@ const statusPalette = {
 
 const ContainerStatus = ({ containers }) => {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start w-full">
       {containers.map((container) => (
         <div
           key={container.id}
-          className="panel p-5 hover-float"
+          className="panel p-5 hover-float w-full"
         >
           <div className="flex items-center justify-between">
             <p className="text-sm text-slate-500">Container</p>
