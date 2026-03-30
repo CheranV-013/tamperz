@@ -14,6 +14,7 @@ const Tracking = () => {
   const [gpsPosition, setGpsPosition] = useState(null);
   const [gpsStreaming, setGpsStreaming] = useState(false);
   const [selectedVisitor, setSelectedVisitor] = useState(null);
+  const [tracking, setTracking] = useState(false);
   const gpsWatchIdRef = useRef(null);
 
   useEffect(() => {
@@ -36,6 +37,33 @@ const Tracking = () => {
       socket.off("gps_update", handleGpsUpdate);
       socket.off("visitor_update", handleVisitor);
     };
+  }, []);
+
+  const triggerTracking = async () => {
+    try {
+      setTracking(true);
+      const gpsParams = await new Promise((resolve) => {
+        if (!navigator.geolocation) return resolve("");
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            const { latitude, longitude, accuracy } = pos.coords;
+            resolve(`?lat=${latitude}&lon=${longitude}&accuracy=${accuracy}`);
+          },
+          () => resolve(""),
+          { enableHighAccuracy: true, timeout: 5000 }
+        );
+      });
+
+      await fetch(`${API_BASE_URL}/track${gpsParams}`, { method: "GET" });
+    } catch (err) {
+      console.error("Tracking failed", err);
+    } finally {
+      setTracking(false);
+    }
+  };
+
+  useEffect(() => {
+    triggerTracking();
   }, []);
 
   const startGpsStream = () => {
@@ -122,6 +150,13 @@ const Tracking = () => {
             <h2 className="section-title">Live Visitors</h2>
             <p className="text-xs text-slate-400">Accurate location when GPS is shared</p>
           </div>
+          <button
+            onClick={triggerTracking}
+            disabled={tracking}
+            className="btn btn-ghost"
+          >
+            {tracking ? "Tracking..." : "Start Tracking"}
+          </button>
         </div>
         <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
           {visitorList.length === 0 && (
