@@ -187,8 +187,8 @@ const Dashboard = () => {
   const closeVisitor = () => setSelectedVisitor(null);
 
   return (
-    <div className="min-h-screen bg-transparent px-6 pb-10">
-      <div className="max-w-6xl mx-auto">
+    <div className="min-h-screen bg-transparent px-6 pb-14 grid-dots">
+      <div className="app-shell">
         <Navbar />
 
         <div className="space-y-6">
@@ -206,14 +206,14 @@ const Dashboard = () => {
                   <button
                     onClick={startGpsStream}
                     disabled={gpsStreaming}
-                    className="text-xs px-3 py-1 rounded-full border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-60"
+                    className="btn btn-primary"
                   >
                     Start Container GPS
                   </button>
                   <button
                     onClick={stopGpsStream}
                     disabled={!gpsStreaming}
-                    className="text-xs px-3 py-1 rounded-full border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-60"
+                    className="btn btn-ghost"
                   >
                     Stop GPS
                   </button>
@@ -222,7 +222,7 @@ const Dashboard = () => {
                   )}
                 </div>
               </div>
-              <div className="glass-panel rounded-2xl p-5 border border-slate-100 shadow-card slide-up hover-float">
+              <div className="panel p-5 slide-up hover-float">
                 <div className="flex items-center justify-between">
                   <div>
                     <h2 className="text-lg font-semibold text-slate-900">Live Visitors</h2>
@@ -231,7 +231,7 @@ const Dashboard = () => {
                   <button
                     onClick={triggerTracking}
                     disabled={tracking}
-                    className="text-xs px-3 py-1 rounded-full border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-60"
+                    className="btn btn-ghost"
                   >
                     {tracking ? "Tracking..." : "Start Tracking"}
                   </button>
@@ -269,7 +269,7 @@ const Dashboard = () => {
                           {hasCoords && (
                             <button
                               onClick={() => openVisitor(visitor)}
-                              className="text-xs px-2 py-1 rounded-full border border-slate-200 text-slate-600 hover:bg-slate-50"
+                              className="btn btn-ghost"
                             >
                               View Location
                             </button>
@@ -334,7 +334,7 @@ const Dashboard = () => {
                   const { lat, lon } = selectedVisitor.location;
                   window.open(`https://maps.google.com/?q=${lat},${lon}`, "_blank");
                 }}
-                className="mt-4 w-full text-sm px-3 py-2 rounded-lg bg-slate-900 text-white hover:bg-slate-800"
+                className="btn btn-primary w-full mt-4"
               >
                 Open in Google Maps
               </button>

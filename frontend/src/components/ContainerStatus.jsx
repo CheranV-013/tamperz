@@ -10,15 +10,11 @@ const ContainerStatus = ({ containers }) => {
       {containers.map((container) => (
         <div
           key={container.id}
-          className="glass-panel rounded-2xl p-5 border border-slate-100 shadow-card hover-float"
+          className="panel p-5 hover-float"
         >
           <div className="flex items-center justify-between">
             <p className="text-sm text-slate-500">Container</p>
-            <span
-              className={`px-3 py-1 rounded-full text-xs border ${
-                statusPalette[container.status]
-              }`}
-            >
+            <span className={`chip ${statusPalette[container.status]}`}>
               {container.status.toUpperCase()}
             </span>
           </div>
